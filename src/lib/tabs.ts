@@ -18,7 +18,6 @@ export const TAB_DEFINITIONS: readonly TabDefinition[] = [
   { id: "cartoons", labelKey: "navCartoons", shortcut: "5", primary: false },
   { id: "catalog", labelKey: "navCatalog", shortcut: "6", primary: true },
   { id: "favorites", labelKey: "navFavorites", shortcut: "7", primary: false },
-  { id: "watchlist", labelKey: "navWatchlist", shortcut: "8", primary: false },
 ];
 
 export const TAB_IDS: readonly CategoryTab[] = TAB_DEFINITIONS.map((t) => t.id);

@@ -3,23 +3,39 @@
 import { useOnyxStore } from "@/lib/store";
 import { getT } from "@/lib/i18n";
 
-/** Closes the page: a large wordmark, one line of intent and the required attribution. */
+/**
+ * Footer credits — strictly the three localized lines required by the spec:
+ * designer link, store-visit line, developer handle. Nothing else.
+ */
 export function Footer() {
   const t = getT(useOnyxStore((s) => s.lang));
 
   return (
-    <footer className="mt-auto overflow-hidden bg-secondary/60 pb-28 pt-16 lg:pb-12">
-      <div className="mx-auto max-w-[110rem] px-[var(--gutter)]">
-        <p className="font-display text-[clamp(3rem,2rem+9vw,9rem)] font-medium leading-[0.9] tracking-[-0.04em] text-foreground/90" aria-hidden>
-          {t.siteTitle}
+    <footer className="mt-auto bg-secondary/60 pb-28 pt-12 lg:pb-12">
+      <div className="mx-auto flex max-w-[110rem] flex-col gap-2 px-[var(--gutter)] text-meta text-muted-foreground">
+        <p>
+          {t.footerDesigner}
+          <a
+            href="https://aqeeq-store.vercel.app/shop"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="font-medium text-foreground underline decoration-1 underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            https://aqeeq-store.vercel.app/shop
+          </a>
         </p>
-        <div className="mt-10 flex flex-col gap-3 text-meta text-muted-foreground sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-xl space-y-2">
-            <p className="text-foreground">{t.footerLine}</p>
-            <p>{t.footerRights}</p>
-          </div>
-          <p className="max-w-sm sm:text-end">{t.tmdbNotice}</p>
-        </div>
+        <p>{t.footerStoreLine}</p>
+        <p>
+          {t.footerDeveloper}
+          <a
+            href="https://t.me/Myf4ul1"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="font-medium text-foreground underline decoration-1 underline-offset-4 hover:text-[var(--primary)] focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            @Myf4ul1
+          </a>
+        </p>
       </div>
     </footer>
   );

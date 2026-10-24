@@ -1,11 +1,11 @@
 "use client";
 
 import { memo } from "react";
-import { Bookmark, Heart, Star } from "lucide-react";
+import { Heart, Star } from "lucide-react";
 import { getBilingualOtherTitle } from "@/lib/tmdb";
 import { useOnyxStore } from "@/lib/store";
 import { getT } from "@/lib/i18n";
-import { toggleFavoriteWithUndo, toggleWatchlistWithUndo } from "@/lib/actions";
+import { toggleFavoriteWithUndo } from "@/lib/actions";
 import { TmdbImage } from "./tmdb-image";
 import { cn } from "@/lib/utils";
 import type { Language, TMDBMediaItem } from "@/lib/types";
@@ -25,12 +25,8 @@ interface MediaCardProps {
 const reveal =
   "opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100";
 
-const round =
-  "grid size-9 place-items-center rounded-full bg-black/65 text-white transition-colors hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";
-
 function MediaCardBase({ media, lang, bilingual = false, onSelectDetails, onPrefetch }: MediaCardProps) {
   const t = getT(lang);
-  const isWatchlisted = useOnyxStore((s) => s.watchlist.some((w) => w.id === media.id));
   const isFavorite = useOnyxStore((s) => s.favorites.some((f) => f.id === media.id));
 
   const title = media.title || media.name || "";
@@ -43,7 +39,7 @@ function MediaCardBase({ media, lang, bilingual = false, onSelectDetails, onPref
   return (
     <article className="group relative flex flex-col gap-2" onPointerEnter={() => onPrefetch?.(media)} onFocus={() => onPrefetch?.(media)}>
       {/* One unified target: the entire card body — poster, titles and meta —
-          opens the details view, where playback is started from "Watch". */}
+          opens the details view, where playback is started from "ENJOY". */}
       <button
         type="button"
         onClick={() => onSelectDetails(media)}
@@ -56,15 +52,32 @@ function MediaCardBase({ media, lang, bilingual = false, onSelectDetails, onPref
           <TmdbImage path={media.poster_path} kind="poster" alt={title} decorative sizes="(min-width:1024px) 13rem, (min-width:640px) 11rem, 9rem" />
         </div>
 
-        <div className={cn("pointer-events-none absolute inset-0 z-20 flex flex-col justify-end rounded-[var(--radius-lg)] bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 text-white transition-opacity duration-200", reveal)}>
-          <div className="pointer-events-auto flex items-center justify-end gap-1.5">
-            <button type="button" onClick={() => toggleWatchlistWithUndo(media)} aria-pressed={isWatchlisted} aria-label={isWatchlisted ? t.removeFromWatchlist : t.addToWatchlist} className={round}>
-              <Bookmark className={cn("size-4", isWatchlisted && "fill-current")} aria-hidden />
-            </button>
-            <button type="button" onClick={() => toggleFavoriteWithUndo(media)} aria-pressed={isFavorite} aria-label={isFavorite ? t.removeFromFavorites : t.addToFavorites} className={round}>
-              <Heart className={cn("size-4", isFavorite && "fill-current")} aria-hidden />
-            </button>
-          </div>
+        {/* Quick favorite toggle: a heart in the top-end corner, visible on
+            touch and under focus, revealed on hover for pointer devices.
+            Toggles favorite without leaving the grid (no details page needed). */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); toggleFavoriteWithUndo(media); }}
+          aria-pressed={isFavorite}
+          aria-label={isFavorite ? t.removeFromFavorites : t.addToFavorites}
+          className={cn(
+            "absolute end-2 top-2 z-20 grid size-9 place-items-center rounded-full text-white transition-all hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
+            isFavorite ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "bg-black/65 hover:bg-black/85",
+            reveal
+          )}
+        >
+          <Heart className={cn("size-4", isFavorite && "fill-current")} aria-hidden />
+        </button>
+
+        <div className={cn("pointer-events-none absolute inset-0 z-10 flex flex-col justify-end rounded-[var(--radius-lg)] bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 text-white transition-opacity duration-200", reveal)}>
+          <p className="line-clamp-2 font-display text-[0.9rem] font-medium leading-snug" dir="auto">{title}</p>
+          {rating && (
+            <p className="mt-1 flex items-center gap-1 text-[0.8125rem] tabular-nums">
+              <Star className="size-3 fill-current" aria-hidden />
+              <span className="sr-only">{t.rating}</span>
+              {rating}
+            </p>
+          )}
         </div>
       </div>
 

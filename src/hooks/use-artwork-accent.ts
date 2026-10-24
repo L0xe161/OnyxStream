@@ -64,6 +64,19 @@ export function useArtworkAccent(path: string | null | undefined, theme?: ThemeM
     };
   }, [path]);
 
+  // Propagate the dominant colour to <html> so the frosted theme can blend it
+  // into the dark glass ground. Cleared when the title changes or unmounts.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (raw && raw.path === path && raw.hex) {
+      root.style.setProperty("--artwork-accent", raw.hex);
+    }
+    return () => {
+      // Only clear if we were the one that set it (avoids clobbering a new title).
+      if (raw && raw.path === path) root.style.removeProperty("--artwork-accent");
+    };
+  }, [path, raw]);
+
   const hex = raw && raw.path === path ? raw.hex : null;
   if (!hex) return { style: {} };
   const resolved = resolveAccent(hex, theme ?? active);

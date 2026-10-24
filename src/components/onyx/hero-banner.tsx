@@ -2,11 +2,11 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion, type PanInfo } from "framer-motion";
-import { Bookmark, Heart, Info, Pause, Play, Star } from "lucide-react";
+import { Heart, Info, Pause, Play, Star } from "lucide-react";
 import { getBilingualOtherTitle } from "@/lib/tmdb";
 import { useOnyxStore } from "@/lib/store";
 import { dirFor, getT } from "@/lib/i18n";
-import { toggleFavoriteWithUndo, toggleWatchlistWithUndo } from "@/lib/actions";
+import { toggleFavoriteWithUndo } from "@/lib/actions";
 import { rise, stagger, duration, ease } from "@/lib/motion";
 import { useMotion } from "@/hooks/use-motion";
 import { useArtworkAccent } from "@/hooks/use-artwork-accent";
@@ -46,7 +46,6 @@ export function HeroBanner({ items, lang, bilingual = false, onPlay, onSelectDet
   const [focused, setFocused] = useState(false);
 
   const current = slides[Math.min(index, Math.max(slides.length - 1, 0))];
-  const isWatchlisted = useOnyxStore((s) => !!current && s.watchlist.some((w) => w.id === current.id));
   const isFavorite = useOnyxStore((s) => !!current && s.favorites.some((f) => f.id === current.id));
   const accent = useArtworkAccent(current?.backdrop_path ?? current?.poster_path);
 
@@ -152,9 +151,6 @@ export function HeroBanner({ items, lang, bilingual = false, onPlay, onSelectDet
             <button type="button" onClick={() => onSelectDetails(current)} className={cn(pill, "bg-foreground/10 text-foreground hover:bg-foreground/20")}>
               <Info className="size-5" aria-hidden />
               {t.moreInfo}
-            </button>
-            <button type="button" onClick={() => toggleWatchlistWithUndo(current)} aria-pressed={isWatchlisted} aria-label={isWatchlisted ? t.removeFromWatchlist : t.addToWatchlist} className={iconPill}>
-              <Bookmark className={cn("size-5", isWatchlisted && "fill-current")} aria-hidden />
             </button>
             <button type="button" onClick={() => toggleFavoriteWithUndo(current)} aria-pressed={isFavorite} aria-label={isFavorite ? t.removeFromFavorites : t.addToFavorites} className={iconPill}>
               <Heart className={cn("size-5", isFavorite && "fill-current")} aria-hidden />

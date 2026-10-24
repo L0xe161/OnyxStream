@@ -4,7 +4,7 @@ export const EXPORT_APP = "onyxstream";
 
 const EXPORT_KEYS = [
   "lang", "artworkLang", "bilingual", "theme", "accent", "activeServerId",
-  "watchlist", "favorites", "continueWatching", "settings",
+  "favorites", "continueWatching", "settings",
 ] as const satisfies readonly (keyof OnyxState)[];
 
 export interface ExportFile {

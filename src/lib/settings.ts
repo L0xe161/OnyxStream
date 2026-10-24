@@ -32,6 +32,7 @@ export interface TabSetting {
 }
 
 export interface Settings {
+  /** Kept for migration compatibility only; the System theme option has been removed from the UI, so this is always false. */
   followSystemTheme: boolean;
   corners: CornerStyle;
   density: Density;
@@ -46,9 +47,6 @@ export interface Settings {
   motion: MotionPreference;
   heroAutoplay: boolean;
   heroIntervalMs: 6000 | 8000 | 12000;
-  subtitleLang: SubtitleChoice;
-  rememberSubtitle: boolean;
-  autoFallback: boolean;
   autoPlayNext: boolean;
   resume: ResumeBehavior;
   hideWatched: boolean;
@@ -63,7 +61,7 @@ export const DEFAULT_HOME_ROWS: HomeRowSetting[] = (
 ).map((id) => ({ id, visible: true }));
 
 export const DEFAULT_TABS: TabSetting[] = (
-  ["all", "movies", "tv", "anime", "cartoons", "catalog", "favorites", "watchlist"] as const
+  ["all", "movies", "tv", "anime", "cartoons", "catalog", "favorites"] as const
 ).map((id) => ({ id, visible: true }));
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -80,9 +78,6 @@ export const DEFAULT_SETTINGS: Settings = {
   motion: "system",
   heroAutoplay: true,
   heroIntervalMs: 8000,
-  subtitleLang: "ar",
-  rememberSubtitle: true,
-  autoFallback: true,
   autoPlayNext: false,
   resume: "ask",
   hideWatched: false,

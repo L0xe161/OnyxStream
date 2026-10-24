@@ -17,7 +17,7 @@ import { STORE_KEY } from "./storage-keys";
 import { DEFAULT_HOME_ROWS, DEFAULT_SETTINGS, DEFAULT_TABS, reconcileList, type Settings } from "./settings";
 
 /** Bump when the persisted shape changes and extend `migrate` below. */
-export const STORE_VERSION = 4;
+export const STORE_VERSION = 5;
 const MAX_CONTINUE = 20;
 
 export interface OnyxState {
@@ -49,13 +49,6 @@ export interface OnyxState {
   selectedGenreId: number | null;
   setCurrentTab: (tab: CategoryTab) => void;
   setSelectedGenreId: (id: number | null) => void;
-
-  // Watchlist
-  watchlist: TMDBMediaItem[];
-  toggleWatchlist: (media: TMDBMediaItem) => void;
-  setWatchlisted: (media: TMDBMediaItem, on: boolean) => void;
-  isWatchlisted: (id: number) => boolean;
-  clearWatchlist: () => void;
 
   // Favorites
   favorites: TMDBMediaItem[];
@@ -123,7 +116,7 @@ export interface OnyxState {
 type PersistedState = Pick<
   OnyxState,
   | "lang" | "artworkLang" | "bilingual" | "theme" | "accent" | "currentTab"
-  | "watchlist" | "favorites" | "continueWatching" | "activeServerId" | "settings"
+  | "favorites" | "continueWatching" | "activeServerId" | "settings"
 >;
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
@@ -150,11 +143,13 @@ export function sanitizePersisted(raw: Partial<PersistedState> | undefined, base
   out.accent = typeof raw.accent === "string" && ACCENTS.some((a) => a.id === raw.accent)
     ? (raw.accent as AccentColor)
     : "white";
-  if (typeof raw.currentTab === "string") out.currentTab = raw.currentTab as CategoryTab;
+  if (typeof raw.currentTab === "string") {
+    // The "watchlist" tab was removed; send anyone who had it selected to Home.
+    out.currentTab = ((raw.currentTab as string) === "watchlist" ? "all" : raw.currentTab) as CategoryTab;
+  }
   if (typeof raw.activeServerId === "string") out.activeServerId = raw.activeServerId;
 
   const media = (v: unknown) => asArray<TMDBMediaItem>(v).filter((m) => isRecord(m) && typeof m.id === "number");
-  if ("watchlist" in raw) out.watchlist = media(raw.watchlist);
   if ("favorites" in raw) out.favorites = media(raw.favorites);
 
   if ("continueWatching" in raw) {
@@ -218,24 +213,6 @@ export const useOnyxStore = create<OnyxState>()(
       setCurrentTab: (currentTab) => set({ currentTab }),
       setSelectedGenreId: (selectedGenreId) => set({ selectedGenreId }),
 
-      watchlist: [],
-      toggleWatchlist: (media) =>
-        set((s) => {
-          const exists = s.watchlist.some((w) => w.id === media.id);
-          return {
-            watchlist: exists
-              ? s.watchlist.filter((w) => w.id !== media.id)
-              : [media, ...s.watchlist],
-          };
-        }),
-      setWatchlisted: (media, on) =>
-        set((s) => {
-          const without = s.watchlist.filter((w) => w.id !== media.id);
-          return { watchlist: on ? [media, ...without] : without };
-        }),
-      isWatchlisted: (id) => get().watchlist.some((w) => w.id === id),
-      clearWatchlist: () => set({ watchlist: [] }),
-
       favorites: [],
       toggleFavorite: (media) =>
         set((s) => {
@@ -262,7 +239,6 @@ export const useOnyxStore = create<OnyxState>()(
           lang: "en",
           artworkLang: "en",
           bilingual: false,
-          watchlist: [],
           favorites: [],
           continueWatching: [],
         }),
@@ -302,6 +278,7 @@ export const useOnyxStore = create<OnyxState>()(
       activeSeason: 1,
       activeEpisode: 1,
       activeServerId: "embedmaster",
+      // (kept default above)
       setActiveStream: (media, season = 1, episode = 1, serverId) =>
         set({
           activeMedia: media,
@@ -362,7 +339,6 @@ export const useOnyxStore = create<OnyxState>()(
         theme: s.theme,
         accent: s.accent,
         currentTab: s.currentTab,
-        watchlist: s.watchlist,
         favorites: s.favorites,
         continueWatching: s.continueWatching,
         activeServerId: s.activeServerId,
@@ -371,10 +347,6 @@ export const useOnyxStore = create<OnyxState>()(
     }
   )
 );
-
-export function useIsWatchlisted(id: number | undefined): boolean {
-  return useOnyxStore((s) => (id ? s.watchlist.some((w) => w.id === id) : false));
-}
 
 export function useIsFavorite(id: number | undefined): boolean {
   return useOnyxStore((s) => (id ? s.favorites.some((f) => f.id === id) : false));

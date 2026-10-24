@@ -7,18 +7,6 @@ import type { TMDBMediaItem } from "./types";
 
 const titleOf = (m: TMDBMediaItem) => m.title || m.name || "";
 
-/** Adds or removes a title from My List with the same toast + Undo everywhere. */
-export function toggleWatchlistWithUndo(media: TMDBMediaItem): void {
-  const state = useOnyxStore.getState();
-  const t = getT(state.lang);
-  const wasOn = state.watchlist.some((w) => w.id === media.id);
-  state.setWatchlisted(media, !wasOn);
-  toast(wasOn ? t.removedFromList : t.addedToList, {
-    description: titleOf(media),
-    action: { label: t.undo, onClick: () => useOnyxStore.getState().setWatchlisted(media, wasOn) },
-  });
-}
-
 /** Adds or removes a favourite with the same toast + Undo everywhere. */
 export function toggleFavoriteWithUndo(media: TMDBMediaItem): void {
   const state = useOnyxStore.getState();

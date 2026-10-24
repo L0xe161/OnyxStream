@@ -55,8 +55,7 @@ export function Header() {
   const toggleSearch = useOnyxStore((s) => s.toggleSearch);
   const setSettingsOpen = useOnyxStore((s) => s.setSettingsOpen);
   const favoriteCount = useOnyxStore((s) => s.favorites.length);
-  const watchlistCount = useOnyxStore((s) => s.watchlist.length);
-  const counts = { favorites: favoriteCount, watchlist: watchlistCount };
+  const counts = { favorites: favoriteCount };
   const t = getT(lang);
 
   const desktop = useNavTabs(5);

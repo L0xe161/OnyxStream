@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertCircle, Bookmark, Heart, RotateCw, WifiOff } from "lucide-react";
+import { AlertCircle, Heart, RotateCw, WifiOff } from "lucide-react";
 import { Header } from "@/components/onyx/header";
 import { HeroBanner } from "@/components/onyx/hero-banner";
 import { CategoryRow } from "@/components/onyx/category-row";
@@ -106,8 +106,8 @@ export default function Home() {
       <main id="main" tabIndex={-1} className="flex-1 pb-24 outline-none lg:pb-0">
         <AnimatePresence mode="wait" initial={false} onExitComplete={restoreScroll}>
           <motion.div key={currentTab} variants={pageVariants} initial="hidden" animate="visible" exit="exit">
-            {currentTab === "watchlist" || currentTab === "favorites" ? (
-              <CollectionView kind={currentTab} lang={lang} bilingual={bilingual} onPlay={handlePlay} onSelectDetails={handleSelectDetails} onPrefetch={prefetch} />
+            {currentTab === "favorites" ? (
+              <CollectionView lang={lang} bilingual={bilingual} onPlay={handlePlay} onSelectDetails={handleSelectDetails} onPrefetch={prefetch} />
             ) : loading ? (
               <CatalogSkeleton />
             ) : error || !data ? (
@@ -186,19 +186,19 @@ function DiscoverView({ tab, data, lang, bilingual, onPlay, onSelectDetails, onP
   );
 }
 
-function CollectionView({ kind, lang, bilingual, onPlay, onSelectDetails, onPrefetch }: ViewProps & { kind: "watchlist" | "favorites" }) {
+function CollectionView({ lang, bilingual, onPlay, onSelectDetails, onPrefetch }: ViewProps) {
   const t = getT(lang);
-  const items = useOnyxStore((s) => (kind === "watchlist" ? s.watchlist : s.favorites));
+  const items = useOnyxStore((s) => s.favorites);
   const setCurrentTab = useOnyxStore((s) => s.setCurrentTab);
-  const title = kind === "watchlist" ? t.navWatchlist : t.favorites;
-  const Icon = kind === "watchlist" ? Bookmark : Heart;
+  const title = t.favorites;
+  const Icon = Heart;
 
   if (items.length === 0) {
     return (
       <EmptyState
         icon={<Icon className="size-8" aria-hidden />}
-        title={kind === "watchlist" ? t.emptyList : t.favoritesEmpty}
-        description={kind === "watchlist" ? t.emptyListSub : t.favoritesEmptySub}
+        title={t.favoritesEmpty}
+        description={t.favoritesEmptySub}
         action={{ label: t.backToCatalog, onClick: () => setCurrentTab("all") }}
       />
     );

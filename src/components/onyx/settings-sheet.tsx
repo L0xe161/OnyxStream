@@ -12,11 +12,10 @@ import { useOnyxStore } from "@/lib/store";
 import { useEffectiveTheme } from "@/hooks/use-effective-theme";
 import { ACCENTS, accentContrast, resolveAccent } from "@/lib/themes";
 import { dirFor, getT, type TranslationKey } from "@/lib/i18n";
-import { STREAM_SERVERS } from "@/lib/stream-servers";
 import { TAB_DEFINITIONS } from "@/lib/tabs";
 import { buildExport, parseImport } from "@/lib/data-transfer";
 import { cn } from "@/lib/utils";
-import type { HomeRowId, HomeRowSetting, Settings, SubtitleChoice, TabSetting } from "@/lib/settings";
+import type { HomeRowId, HomeRowSetting, Settings, TabSetting } from "@/lib/settings";
 import type { AccentColor } from "@/lib/themes";
 import type { Language } from "@/lib/types";
 
@@ -33,7 +32,6 @@ const ROW_LABELS: Record<HomeRowId, TranslationKey> = {
   genres: "genres",
 };
 
-const SUBTITLES: SubtitleChoice[] = ["off", "ar", "en", "fr", "es", "de", "tr"];
 const ORIGINAL_LANGUAGES = ["en", "ar", "ja", "ko", "fr", "es", "tr", "hi", "zh"];
 /** ISO-3166-1 regions surfaced in content preferences; codes TMDB accepts. */
 const PREFERRED_REGIONS = [
@@ -64,7 +62,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
   const accent = useOnyxStore((s) => s.accent);
   const setAccent = useOnyxStore((s) => s.setAccent);
   const bilingual = useOnyxStore((s) => s.bilingual);
-  const serverId = useOnyxStore((s) => s.activeServerId);
   const t = getT(lang);
   const names = new Intl.DisplayNames([lang], { type: "language" });
 
@@ -125,14 +122,11 @@ export function SettingsSheet({ lang }: { lang: Language }) {
             <Field label={t.setTheme} stacked>
               <Segmented
                 label={t.setTheme}
-                value={settings.followSystemTheme ? "system" : theme}
-                options={[{ value: "dark", label: t.themeDark }, { value: "light", label: t.themeLight }, { value: "frosted", label: t.themeFrosted }, { value: "system", label: t.themeSystem }]}
+                value={theme}
+                options={[{ value: "dark", label: t.themeDark }, { value: "light", label: t.themeLight }, { value: "frosted", label: t.themeFrosted }]}
                 onChange={(v) => {
-                  if (v === "system") update({ followSystemTheme: true });
-                  else {
-                    update({ followSystemTheme: false });
-                    store().setTheme(v);
-                  }
+                  update({ followSystemTheme: false });
+                  store().setTheme(v);
                 }}
               />
             </Field>
@@ -222,25 +216,11 @@ export function SettingsSheet({ lang }: { lang: Language }) {
             <Field label={t.setBilingual} hint={t.setBilingualHint}>
               <Switch checked={bilingual} onCheckedChange={(v) => store().setBilingual(v)} aria-label={t.setBilingual} />
             </Field>
-            <Field label={t.setSubtitleLang} stacked>
-              <Segmented label={t.setSubtitleLang} value={settings.subtitleLang} onChange={set("subtitleLang")} options={SUBTITLES.map((c) => ({ value: c, label: c === "off" ? t.subtitlesOff : names.of(c) ?? c }))} />
-            </Field>
           </Section>
 
           <Section title={t.secPlayback}>
-            <Field label={t.setDefaultServer}>
-              <select value={serverId} onChange={(e) => store().setActiveServerId(e.target.value)} aria-label={t.setDefaultServer} className="h-10 rounded-full bg-muted px-4 text-sm outline-none focus-visible:outline-2">
-                {STREAM_SERVERS.map((s) => <option key={s.id} value={s.id}>{lang === "ar" ? s.nameAr : s.name}</option>)}
-              </select>
-            </Field>
-            <Field label={t.setAutoFallback} hint={t.setAutoFallbackHint}>
-              <Switch checked={settings.autoFallback} onCheckedChange={set("autoFallback")} aria-label={t.setAutoFallback} />
-            </Field>
             <Field label={t.setAutoNext}>
               <Switch checked={settings.autoPlayNext} onCheckedChange={set("autoPlayNext")} aria-label={t.setAutoNext} />
-            </Field>
-            <Field label={t.setRememberSub}>
-              <Switch checked={settings.rememberSubtitle} onCheckedChange={set("rememberSubtitle")} aria-label={t.setRememberSub} />
             </Field>
             <Field label={t.setResume} stacked>
               <Segmented label={t.setResume} value={settings.resume} onChange={set("resume")} options={[{ value: "ask", label: t.resumeAsk }, { value: "always", label: t.resumeAlways }, { value: "never", label: t.resumeNever }]} />

@@ -7,7 +7,6 @@ export type CategoryTab =
   | "anime"
   | "cartoons"
   | "catalog"
-  | "watchlist"
   | "favorites";
 
 export type Language = "en" | "ar";

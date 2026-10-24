@@ -127,10 +127,26 @@ export async function fetchTopRated(
   type: MediaType = "movie",
   options: TMDBRequestOptions = {}
 ): Promise<TMDBMediaItem[]> {
-  const params = buildParams(options);
-  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>(`${type}/top_rated`, params);
-  if (!data) return [];
-  return withMediaType(data.results || [], type);
+  // Full pagination: TMDB's top_rated returns one page (20 items) per request.
+  // We fetch the first several pages in parallel and concatenate so the row is
+  // not truncated at 20 — the spec asks for the full list, continuous listing.
+  const PAGES = 5;
+  const pageParams = Array.from({ length: PAGES }, (_, i) => {
+    const params = buildParams(options);
+    params.set("page", String(i + 1));
+    return params;
+  });
+  const responses = await Promise.all(
+    pageParams.map((params) => tmdbFetch<TMDBListResponse<TMDBMediaItem>>(`${type}/top_rated`, params))
+  );
+  const items: TMDBMediaItem[] = [];
+  for (const data of responses) {
+    if (!data) continue;
+    items.push(...withMediaType(data.results || [], type));
+  }
+  // De-duplicate by id (TMDB can overlap across pages in rare cases).
+  const seen = new Set<number>();
+  return items.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
 }
 
 export async function fetchUpcoming(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
@@ -333,10 +349,26 @@ export async function searchMultiWithPeople(
     options.uiLang === "ar" || options.artworkLang === "ar" ? "ar-SA" : "en-US";
   const secondary: "en-US" | "ar-SA" = primary === "ar-SA" ? "en-US" : "ar-SA";
 
-  let [main, other] = await Promise.all([searchMultiInLang(q, primary), searchMultiInLang(q, secondary)]);
+  // Space-insensitive: "black list" should match "The Blacklist". We also fire
+  // the query with all spaces removed, so titles the provider stored as one
+  // word still surface when the user types two.
+  const spaceless = q.replace(/\s+/g, "");
+  const queries = spaceless && spaceless !== q ? [q, spaceless] : [q];
 
-  // Punctuation-insensitive fallback: if nothing came back (e.g. the query
-  // omits a comma the original title has), retry with the punctuation stripped.
+  // Run every (query × language) combination in parallel, then fold them.
+  const buckets = await Promise.all(
+    queries.flatMap((term) => [searchMultiInLang(term, primary), searchMultiInLang(term, secondary)])
+  );
+  let main = buckets[0];
+  let other = buckets[1];
+  // If a spaceless variant returned extra results, fold them in too.
+  if (queries.length > 1) {
+    main = mergeBuckets(main, buckets[2]);
+    other = mergeBuckets(other, buckets[3]);
+  }
+
+  // Punctuation-insensitive fallback: if nothing came back, retry with the
+  // punctuation stripped (covers "The Good, the Bad and the Ugly").
   const loose = normalizeForSearch(q);
   if (loose && loose !== q.toLowerCase() && main.media.length + main.people.length + other.media.length + other.people.length === 0) {
     const [mainLoose, otherLoose] = await Promise.all([
@@ -375,6 +407,23 @@ export async function searchMultiWithPeople(
     media.push(o);
   }
 
+  // Partial / substring ranking: prioritise results whose normalized title
+  // contains the normalized query (so "black" floats The Blacklist, Black
+  // Mirror… above incidental matches). Stable sort keeps TMDB's relevance
+  // order inside each bucket.
+  const needle = normalizeForSearch(q);
+  if (needle) {
+    const score = (m: TMDBMediaItem): number => {
+      const title = normalizeForSearch(m.title || m.name || m.original_title || m.original_name || "");
+      const orig = normalizeForSearch(m.original_title || m.original_name || "");
+      if (title === needle || orig === needle) return 3;
+      if (title.startsWith(needle) || orig.startsWith(needle)) return 2;
+      if (title.includes(needle) || orig.includes(needle)) return 1;
+      return 0;
+    };
+    media.sort((a, b) => score(b) - score(a));
+  }
+
   const peopleById = new Set<number>();
   const people: TMDBSearchPersonResult[] = [];
   for (const p of [...main.people, ...other.people]) {
@@ -383,6 +432,28 @@ export async function searchMultiWithPeople(
     people.push(p);
   }
 
+  return { media, people };
+}
+
+/** Merges two single-language buckets, de-duplicating by media id + person id. */
+function mergeBuckets(a: MultiSearchBucket, b: MultiSearchBucket): MultiSearchBucket {
+  const mediaIds = new Set<string>();
+  const media = [...a.media];
+  for (const m of a.media) mediaIds.add(`${m.media_type}-${m.id}`);
+  for (const m of b.media) {
+    const key = `${m.media_type}-${m.id}`;
+    if (!mediaIds.has(key)) {
+      mediaIds.add(key);
+      media.push(m);
+    }
+  }
+  const peopleIds = new Set<number>();
+  const people: TMDBSearchPersonResult[] = [];
+  for (const p of [...a.people, ...b.people]) {
+    if (peopleIds.has(p.id)) continue;
+    peopleIds.add(p.id);
+    people.push(p);
+  }
   return { media, people };
 }
 

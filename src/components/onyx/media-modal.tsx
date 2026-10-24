@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bookmark, ChevronRight, ExternalLink, Heart, Info, Loader2, Play, Star, X } from "lucide-react";
+import { ChevronRight, ExternalLink, Heart, Info, Loader2, Play, Star, X } from "lucide-react";
 import { Overlay, OverlayClose } from "./overlay";
 import { MediaCard } from "./media-card";
 import { TmdbImage } from "./tmdb-image";
@@ -11,7 +11,7 @@ import { useShowStructure } from "@/hooks/use-show-structure";
 import { useArtworkAccent } from "@/hooks/use-artwork-accent";
 import { useOnyxStore } from "@/lib/store";
 import { dirFor, getT } from "@/lib/i18n";
-import { toggleFavoriteWithUndo, toggleWatchlistWithUndo } from "@/lib/actions";
+import { toggleFavoriteWithUndo } from "@/lib/actions";
 import { cn } from "@/lib/utils";
 import type { ArtworkLanguage, Language, TMDBMediaItem } from "@/lib/types";
 
@@ -51,7 +51,6 @@ function ModalBody({ media, onClose, onPlay, lang, artworkLang, bilingual = fals
   const { season, loading: seasonLoading } = useSeason(isTv ? media : null, selectedSeason, lang, artworkLang);
 
   const item = details ?? media;
-  const isWatchlisted = useOnyxStore((s) => s.watchlist.some((w) => w.id === item.id));
   const isFavorite = useOnyxStore((s) => s.favorites.some((f) => f.id === item.id));
   const accent = useArtworkAccent(item.backdrop_path || item.poster_path);
 
@@ -102,9 +101,6 @@ function ModalBody({ media, onClose, onPlay, lang, artworkLang, bilingual = fals
             <button type="button" onClick={() => { onPlay(item, isTv ? selectedSeason : undefined, isTv ? 1 : undefined); onClose(); }} className={cn(pill, "bg-[var(--title-accent,var(--primary))] text-[var(--title-accent-ink,var(--primary-foreground))] hover:brightness-110")}>
               <Play className="size-5 fill-current rtl:-scale-x-100" aria-hidden />
               {t.playNow}
-            </button>
-            <button type="button" onClick={() => toggleWatchlistWithUndo(item)} aria-pressed={isWatchlisted} aria-label={isWatchlisted ? t.removeFromWatchlist : t.addToWatchlist} className={iconPill}>
-              <Bookmark className={cn("size-5", isWatchlisted && "fill-current")} aria-hidden />
             </button>
             <button type="button" onClick={() => toggleFavoriteWithUndo(item)} aria-pressed={isFavorite} aria-label={isFavorite ? t.removeFromFavorites : t.addToFavorites} className={iconPill}>
               <Heart className={cn("size-5", isFavorite && "fill-current")} aria-hidden />
