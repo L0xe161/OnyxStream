@@ -294,7 +294,7 @@ export const translations = {
     footerDeveloper: "Website developed by ",
   },
   ar: {
-    siteTitle: "سين سوليس",
+    siteTitle: "CineSolace",
     tagline: "ملاذك الخاص",
     searchPlaceholder: "ابحث عن أفلام، مسلسلات، أنمي، كرتون…",
     searchShortcut: "اضغط / للبحث",
