@@ -49,12 +49,12 @@ function MediaCardBase({ media, lang, bilingual = false, onSelectDetails, onPref
 
       <div className="relative transition-transform duration-300 ease-[var(--ease-standard)] [@media(hover:hover)]:group-hover:-translate-y-1 [@media(hover:hover)]:group-focus-within:-translate-y-1 motion-reduce:transform-none">
         <div className="overflow-hidden rounded-[var(--radius-lg)]">
-          <TmdbImage path={media.poster_path} kind="poster" alt={title} decorative sizes="(min-width:1024px) 13rem, (min-width:640px) 11rem, 9rem" />
+          <TmdbImage path={media.poster_path} kind="poster" alt={title} decorative sizes="(min-width:1024px) 15rem, (min-width:640px) 13rem, 11rem" />
         </div>
 
-        {/* Quick favorite toggle: a heart in the top-end corner, visible on
-            touch and under focus, revealed on hover for pointer devices.
-            Toggles favorite without leaving the grid (no details page needed). */}
+        {/* Quick favorite toggle: a heart in the top-end corner, always visible
+            so users can add to favorites from the grid without entering details.
+            stopPropagation keeps the card click (which opens details) from firing. */}
         <button
           type="button"
           onClick={(e) => { e.stopPropagation(); toggleFavoriteWithUndo(media); }}
@@ -62,8 +62,7 @@ function MediaCardBase({ media, lang, bilingual = false, onSelectDetails, onPref
           aria-label={isFavorite ? t.removeFromFavorites : t.addToFavorites}
           className={cn(
             "absolute end-2 top-2 z-20 grid size-9 place-items-center rounded-full text-white transition-all hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
-            isFavorite ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "bg-black/65 hover:bg-black/85",
-            reveal
+            isFavorite ? "bg-[var(--primary)] text-[var(--primary-foreground)]" : "bg-black/65 hover:bg-black/85"
           )}
         >
           <Heart className={cn("size-4", isFavorite && "fill-current")} aria-hidden />

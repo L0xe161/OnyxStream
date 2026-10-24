@@ -2,7 +2,7 @@ import type { Language, ArtworkLanguage } from "./types";
 
 export const translations = {
   en: {
-    siteTitle: "CineSolace",
+    siteTitle: "OnyxStream",
     tagline: "Your Personal Escape",
     searchPlaceholder: "Search movies, TV series, anime, cartoons…",
     searchShortcut: "Press / to search",
@@ -294,7 +294,7 @@ export const translations = {
     footerDeveloper: "Website developed by ",
   },
   ar: {
-    siteTitle: "CineSolace",
+    siteTitle: "OnyxStream",
     tagline: "ملاذك الخاص",
     searchPlaceholder: "ابحث عن أفلام، مسلسلات، أنمي، كرتون…",
     searchShortcut: "اضغط / للبحث",

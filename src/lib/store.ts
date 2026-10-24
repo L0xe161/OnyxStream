@@ -17,7 +17,7 @@ import { STORE_KEY } from "./storage-keys";
 import { DEFAULT_HOME_ROWS, DEFAULT_SETTINGS, DEFAULT_TABS, reconcileList, type Settings } from "./settings";
 
 /** Bump when the persisted shape changes and extend `migrate` below. */
-export const STORE_VERSION = 5;
+export const STORE_VERSION = 6;
 const MAX_CONTINUE = 20;
 
 export interface OnyxState {
@@ -136,7 +136,9 @@ export function sanitizePersisted(raw: Partial<PersistedState> | undefined, base
   // the interface language (Arabic UI -> Arabic posters, English UI -> English posters).
   out.artworkLang = out.lang ?? "en";
   if (typeof raw.bilingual === "boolean") out.bilingual = raw.bilingual;
-  if (raw.theme === "dark" || raw.theme === "light" || raw.theme === "frosted") out.theme = raw.theme;
+  // Only the dark theme is available now; force everyone to dark regardless
+  // of what they had persisted (light/frosted have been removed).
+  out.theme = "dark";
   // Accent: validate against the known palette so an unknown/old value falls
   // back to white rather than crashing the theme applier. The picker is back
   // in the settings sheet, so the user's choice is honoured again.

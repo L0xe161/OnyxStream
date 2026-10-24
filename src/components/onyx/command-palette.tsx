@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { CircleHelp, Globe, LayoutGrid, Moon, Search, SlidersHorizontal } from "lucide-react";
+import { CircleHelp, Globe, LayoutGrid, Search, SlidersHorizontal } from "lucide-react";
 import { Overlay } from "./overlay";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut } from "@/components/ui/command";
 import { useOnyxStore } from "@/lib/store";
 import { dirFor, getT } from "@/lib/i18n";
 import { TAB_DEFINITIONS } from "@/lib/tabs";
-import type { ThemeMode } from "@/lib/themes";
 import type { Language } from "@/lib/types";
-
-const THEME_ORDER: ThemeMode[] = ["dark", "light", "frosted"];
 
 /** ⌘/Ctrl+K: jump anywhere, search, or flip a preference without leaving the keyboard. */
 export function CommandPalette({ lang }: { lang: Language }) {
@@ -86,20 +83,6 @@ export function CommandPalette({ lang }: { lang: Language }) {
               <SlidersHorizontal aria-hidden />
               {t.openSettings}
               <CommandShortcut>,</CommandShortcut>
-            </CommandItem>
-            <CommandItem
-              value={t.toggleTheme}
-              onSelect={() =>
-                run(() => {
-                  const s = store();
-                  const next = THEME_ORDER[(THEME_ORDER.indexOf(s.theme) + 1) % THEME_ORDER.length];
-                  s.updateSettings({ followSystemTheme: false });
-                  s.setTheme(next);
-                })
-              }
-            >
-              <Moon aria-hidden />
-              {t.toggleTheme}
             </CommandItem>
             <CommandItem value={t.toggleLanguage} onSelect={() => run(() => store().toggleLang())}>
               <Globe aria-hidden />

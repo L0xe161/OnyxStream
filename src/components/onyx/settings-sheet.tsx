@@ -57,7 +57,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
   const settings = useOnyxStore((s) => s.settings);
   const update = useOnyxStore((s) => s.updateSettings);
   const reset = useOnyxStore((s) => s.resetSettings);
-  const theme = useOnyxStore((s) => s.theme);
   const effectiveTheme = useEffectiveTheme();
   const accent = useOnyxStore((s) => s.accent);
   const setAccent = useOnyxStore((s) => s.setAccent);
@@ -81,7 +80,7 @@ export function SettingsSheet({ lang }: { lang: Language }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `cinesolace-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = `onyxstream-${new Date().toISOString().slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -119,18 +118,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-8">
           <Section title={t.secAppearance}>
-            <Field label={t.setTheme} stacked>
-              <Segmented
-                label={t.setTheme}
-                value={theme}
-                options={[{ value: "dark", label: t.themeDark }, { value: "light", label: t.themeLight }, { value: "frosted", label: t.themeFrosted }]}
-                onChange={(v) => {
-                  update({ followSystemTheme: false });
-                  store().setTheme(v);
-                }}
-              />
-            </Field>
-
             <Field label={t.setAccent} hint={resolved.adjusted ? t.accentAdjusted : undefined} stacked>
               <div role="radiogroup" aria-label={t.setAccent} className="flex flex-wrap gap-2">
                 {ACCENTS.map((a) => {

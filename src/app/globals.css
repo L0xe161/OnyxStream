@@ -180,7 +180,7 @@
   --space-section: 3.5rem;
   --space-row: 1rem;
   --gutter: clamp(1rem, 0.4rem + 3vw, 3.5rem);
-  --poster-w: 10.5rem;
+  --poster-w: 12rem;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 [data-corners="sharp"] { --radius: 0.125rem; }
@@ -189,9 +189,9 @@
 [data-density="compact"] { --space-section: 2.25rem; --space-row: 0.625rem; }
 [data-density="comfortable"] { --space-section: 3.5rem; --space-row: 1rem; }
 [data-density="spacious"] { --space-section: 5rem; --space-row: 1.5rem; }
-[data-poster="sm"] { --poster-w: 8.5rem; }
-[data-poster="md"] { --poster-w: 10.5rem; }
-[data-poster="lg"] { --poster-w: 13rem; }
+[data-poster="sm"] { --poster-w: 10rem; }
+[data-poster="md"] { --poster-w: 12rem; }
+[data-poster="lg"] { --poster-w: 14.5rem; }
 
 /* Fonts: a display face with character, a quiet text face, and matched Arabic faces. */
 :root {

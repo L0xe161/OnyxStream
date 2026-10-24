@@ -18,7 +18,7 @@ function Wordmark({ label, onClick }: { label: string; onClick: () => void }) {
   return (
     <button type="button" onClick={onClick} className="flex items-center gap-2.5 rounded-full pe-2 focus-visible:outline-2 focus-visible:outline-offset-4" aria-label={label}>
       <span className="grid size-8 place-items-center rounded-full bg-foreground font-display text-[0.8125rem] font-semibold tracking-tight text-background" aria-hidden>
-        CS
+        OX
       </span>
       <span className="font-display text-xl font-medium tracking-tight">{label}</span>
     </button>

@@ -25,7 +25,7 @@ export function getTMDBImageUrl(
   if (!path) {
     // Neutral placeholder that fits the dark cinema theme.
     return "data:image/svg+xml;utf8," + encodeURIComponent(
-      `<svg xmlns='http://www.w3.org/2000/svg' width='500' height='750' viewBox='0 0 500 750'><rect width='500' height='750' fill='#12141a'/><text x='250' y='375' font-family='monospace' font-size='28' fill='#1f2833' text-anchor='middle'>CS</text></svg>`
+      `<svg xmlns='http://www.w3.org/2000/svg' width='500' height='750' viewBox='0 0 500 750'><rect width='500' height='750' fill='#12141a'/><text x='250' y='375' font-family='monospace' font-size='28' fill='#1f2833' text-anchor='middle'>ONYX</text></svg>`
     );
   }
   return `https://image.tmdb.org/t/p/${size}${path}`;
