@@ -1,6 +1,6 @@
 import { sanitizePersisted, STORE_VERSION, type OnyxState } from "./store";
 
-export const EXPORT_APP = "onyxstream";
+export const EXPORT_APP = "cinesolace";
 
 const EXPORT_KEYS = [
   "lang", "artworkLang", "bilingual", "theme", "accent", "activeServerId",

@@ -1,4 +1,4 @@
-# OnyxStream (package: `moviejoy`)
+# CineSolace (package: `moviejoy`)
 
 A bilingual (English / Arabic, full RTL) streaming browser built on Next.js 16 (App Router), React 19, TypeScript, Tailwind v4, shadcn/ui + Radix, Zustand, Framer Motion and TanStack Query.
 

@@ -2,8 +2,8 @@ import type { Language, ArtworkLanguage } from "./types";
 
 export const translations = {
   en: {
-    siteTitle: "OnyxStream",
-    tagline: "Minimalist Dual-Language Cinema",
+    siteTitle: "CineSolace",
+    tagline: "Your Personal Escape",
     searchPlaceholder: "Search movies, TV series, anime, cartoons…",
     searchShortcut: "Press / to search",
     navAll: "Home",
@@ -294,8 +294,8 @@ export const translations = {
     footerDeveloper: "Website developed by ",
   },
   ar: {
-    siteTitle: "أونيكس ستريم",
-    tagline: "منصة المشاهدة السينمائية ثنائية اللغة",
+    siteTitle: "سين سوليس",
+    tagline: "ملاذك الخاص",
     searchPlaceholder: "ابحث عن أفلام، مسلسلات، أنمي، كرتون…",
     searchShortcut: "اضغط / للبحث",
     navAll: "الرئيسية",

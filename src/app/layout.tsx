@@ -19,11 +19,11 @@ const plexArabic = IBM_Plex_Sans_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "OnyxStream — Dual-Language Minimalist Cinema",
+  title: "CineSolace — Your Personal Escape",
   description:
     "High-performance streaming platform for Movies, TV Shows, Anime, and Cartoons with light/dark/frosted themes, full catalog filtering, director & cast search, bilingual Arabic/English titles, and SubDL subtitle proxying.",
   keywords: [
-    "OnyxStream",
+    "CineSolace",
     "streaming",
     "movies",
     "tv shows",
@@ -33,17 +33,17 @@ export const metadata: Metadata = {
     "catalog",
     "themes",
   ],
-  authors: [{ name: "OnyxStream" }],
+  authors: [{ name: "CineSolace" }],
   openGraph: {
-    title: "OnyxStream — Dual-Language Minimalist Cinema",
+    title: "CineSolace — Your Personal Escape",
     description:
       "Dark/light/frosted streaming platform for Movies, TV Shows, Anime & Cartoons with full catalog filtering and bilingual Arabic/English artwork.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OnyxStream",
-    description: "Dual-language minimalist cinema streaming with full theming.",
+    title: "CineSolace",
+    description: "Your Personal Escape — bilingual cinema streaming with full theming.",
   },
 };
 

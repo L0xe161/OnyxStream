@@ -109,7 +109,7 @@ export async function GET(
   try {
     const res = await fetch(`${TMDB_BASE}/${endpoint}?${upstream.toString()}`, {
       signal: controller.signal,
-      headers: { Accept: "application/json", "User-Agent": "OnyxStream/1.0" },
+      headers: { Accept: "application/json", "User-Agent": "CineSolace/1.0" },
     });
     const body: unknown = await res.json().catch(() => null);
 
