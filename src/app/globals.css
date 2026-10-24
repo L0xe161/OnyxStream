@@ -1,0 +1,354 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--ff-text);
+  --font-display: var(--ff-display);
+  --font-mono: var(--ff-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-onyx: var(--background);
+  --color-onyx-elevated: var(--card);
+  --color-onyx-border: var(--border);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Type scale: very large display, quiet metadata. Tracking tightens as size grows. */
+  --text-display: clamp(3rem, 2rem + 6vw, 7rem);
+  --text-display--line-height: 0.92;
+  --text-display--letter-spacing: -0.04em;
+  --text-headline: clamp(2rem, 1.4rem + 2.6vw, 3.5rem);
+  --text-headline--line-height: 1;
+  --text-headline--letter-spacing: -0.03em;
+  --text-title: clamp(1.25rem, 1.1rem + 0.6vw, 1.625rem);
+  --text-title--line-height: 1.15;
+  --text-title--letter-spacing: -0.02em;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.6;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.35;
+  --text-meta--letter-spacing: 0.01em;
+
+  --color-primary-text: var(--primary);
+  --color-surface-1: var(--card);
+  --color-surface-2: var(--secondary);
+  --color-surface-3: var(--muted);
+}
+
+/* ============================================================
+   TOKENS. One ground, one ink, one accent per theme. Surfaces step
+   tonally (ground < card < secondary < muted) instead of using borders.
+   --primary is resolved per theme in JS (themes.ts) so it always meets
+   WCAG AA as text; the values below are only the pre-hydration defaults.
+   ============================================================ */
+:root,
+.theme-dark {
+  --background: #0a0a0b;
+  --foreground: #f3f0ea;
+  --card: #111113;
+  --card-foreground: #f3f0ea;
+  --popover: #151517;
+  --popover-foreground: #f3f0ea;
+  --primary: #06b6d4;
+  --primary-foreground: #000000;
+  --secondary: #18181b;
+  --secondary-foreground: #f3f0ea;
+  --muted: #1d1d21;
+  --muted-foreground: #aaa69e;
+  --accent: #0e7490;
+  --accent-foreground: #f3f0ea;
+  --destructive: #f26b6b;
+  --border: rgb(255 255 255 / 0.09);
+  --input: rgb(255 255 255 / 0.12);
+  --ring: #06b6d4;
+  --onyx-scrim: #0a0a0b;
+  --chart-1: #06b6d4;
+  --chart-2: #d6a85c;
+  --chart-3: #8b8f9c;
+  --chart-4: #b87ab8;
+  --chart-5: #6aa88b;
+  --sidebar: #111113;
+  --sidebar-foreground: #f3f0ea;
+  --sidebar-primary: #06b6d4;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #18181b;
+  --sidebar-accent-foreground: #f3f0ea;
+  --sidebar-border: rgb(255 255 255 / 0.09);
+  --sidebar-ring: #06b6d4;
+  color-scheme: dark;
+}
+
+.theme-light {
+  --background: #f4f1ea;
+  --foreground: #16140f;
+  --card: #fbfaf6;
+  --card-foreground: #16140f;
+  --popover: #fffefb;
+  --popover-foreground: #16140f;
+  --primary: #046b7d;
+  --primary-foreground: #ffffff;
+  --secondary: #ebe7dd;
+  --secondary-foreground: #16140f;
+  --muted: #e5e0d3;
+  --muted-foreground: #565146;
+  --accent: #035261;
+  --accent-foreground: #ffffff;
+  --destructive: #b42318;
+  --border: rgb(22 20 15 / 0.13);
+  --input: rgb(22 20 15 / 0.18);
+  --ring: #046b7d;
+  --onyx-scrim: #f4f1ea;
+  --sidebar: #fbfaf6;
+  --sidebar-foreground: #16140f;
+  --sidebar-primary: #046b7d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ebe7dd;
+  --sidebar-accent-foreground: #16140f;
+  --sidebar-border: rgb(22 20 15 / 0.13);
+  --sidebar-ring: #046b7d;
+  color-scheme: light;
+}
+
+.theme-frosted {
+  --background: transparent;
+  --foreground: #f5f6fb;
+  --card: rgb(16 18 28 / 0.62);
+  --card-foreground: #f5f6fb;
+  --popover: rgb(18 20 31 / 0.92);
+  --popover-foreground: #f5f6fb;
+  --primary: #06b6d4;
+  --primary-foreground: #000000;
+  --secondary: rgb(255 255 255 / 0.08);
+  --secondary-foreground: #f5f6fb;
+  --muted: rgb(255 255 255 / 0.1);
+  --muted-foreground: #c3c8d6;
+  --accent: #0e7490;
+  --accent-foreground: #f5f6fb;
+  --destructive: #f58b8b;
+  --border: rgb(255 255 255 / 0.16);
+  --input: rgb(255 255 255 / 0.18);
+  --ring: #06b6d4;
+  --onyx-scrim: #0b0d16;
+  --sidebar: rgb(16 18 28 / 0.62);
+  --sidebar-foreground: #f5f6fb;
+  --sidebar-primary: #06b6d4;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: rgb(255 255 255 / 0.08);
+  --sidebar-accent-foreground: #f5f6fb;
+  --sidebar-border: rgb(255 255 255 / 0.16);
+  --sidebar-ring: #06b6d4;
+  color-scheme: dark;
+}
+
+/* User controls, applied as data attributes on <html> by the theme applier. */
+:root {
+  --radius: 0.5rem;
+  --text-scale: 1;
+  --space-section: 3.5rem;
+  --space-row: 1rem;
+  --gutter: clamp(1rem, 0.4rem + 3vw, 3.5rem);
+  --poster-w: 10.5rem;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}
+[data-corners="sharp"] { --radius: 0.125rem; }
+[data-corners="soft"] { --radius: 0.5rem; }
+[data-corners="round"] { --radius: 1rem; }
+[data-density="compact"] { --space-section: 2.25rem; --space-row: 0.625rem; }
+[data-density="comfortable"] { --space-section: 3.5rem; --space-row: 1rem; }
+[data-density="spacious"] { --space-section: 5rem; --space-row: 1.5rem; }
+[data-poster="sm"] { --poster-w: 8.5rem; }
+[data-poster="md"] { --poster-w: 10.5rem; }
+[data-poster="lg"] { --poster-w: 13rem; }
+
+/* Fonts: a display face with character, a quiet text face, and matched Arabic faces. */
+:root {
+  --ff-display: var(--f-fraunces), var(--f-amiri), Georgia, "Times New Roman", serif;
+  --ff-text: var(--f-geist), var(--f-plex-arabic), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ff-mono: var(--f-geist-mono), ui-monospace, monospace;
+}
+[dir="rtl"] {
+  --ff-display: var(--f-amiri), var(--f-fraunces), "Traditional Arabic", serif;
+  --ff-text: var(--f-plex-arabic), var(--f-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+[data-font="neutral"] { --ff-display: var(--ff-text); }
+
+/* Aurora ground for the frosted theme only. */
+.theme-frosted body {
+  background:
+    radial-gradient(circle at 12% 18%, rgb(6 182 212 / 0.2), transparent 42%),
+    radial-gradient(circle at 88% 12%, rgb(139 92 246 / 0.18), transparent 45%),
+    radial-gradient(circle at 75% 85%, rgb(236 72 153 / 0.13), transparent 45%),
+    linear-gradient(160deg, #070a12 0%, #0c0f1a 60%, #06080f 100%);
+  background-attachment: fixed;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-size: calc(100% * var(--text-scale));
+    -webkit-text-size-adjust: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted) transparent;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--ff-text);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--ff-display);
+    font-optical-sizing: auto;
+  }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 38%, transparent);
+    color: var(--foreground);
+  }
+  button, [role="button"], a, select, summary { touch-action: manipulation; }
+}
+
+/* Scrollbars: thin, tonal, never decorative. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); background-clip: content-box; }
+
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }
+
+/* Scrims: measured gradients that adapt to each theme's ground. */
+.onyx-fade-bottom {
+  background: linear-gradient(
+    to top,
+    var(--onyx-scrim) 0%,
+    color-mix(in srgb, var(--onyx-scrim) 88%, transparent) 28%,
+    color-mix(in srgb, var(--onyx-scrim) 40%, transparent) 62%,
+    transparent 100%
+  );
+}
+.onyx-fade-inline {
+  background: linear-gradient(
+    to right,
+    var(--onyx-scrim) 0%,
+    color-mix(in srgb, var(--onyx-scrim) 86%, transparent) 32%,
+    color-mix(in srgb, var(--onyx-scrim) 36%, transparent) 62%,
+    transparent 100%
+  );
+}
+[dir="rtl"] .onyx-fade-inline { background: linear-gradient(to left,
+    var(--onyx-scrim) 0%,
+    color-mix(in srgb, var(--onyx-scrim) 86%, transparent) 32%,
+    color-mix(in srgb, var(--onyx-scrim) 36%, transparent) 62%,
+    transparent 100%
+  );
+}
+.edge-fade {
+  --edge: 2.5rem;
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--edge), #000 calc(100% - var(--edge)), transparent 100%);
+}
+
+/* Skeleton shimmer animates transform only (compositor-friendly). */
+.shimmer { position: relative; overflow: hidden; background: var(--muted); }
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--foreground) 9%, transparent), transparent);
+  animation: onyx-shimmer 1.4s var(--ease-standard) infinite;
+}
+[dir="rtl"] .shimmer::after { animation-name: onyx-shimmer-rtl; }
+@keyframes onyx-shimmer { to { transform: translateX(100%); } }
+@keyframes onyx-shimmer-rtl { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+/* Skip link */
+.skip-link {
+  position: fixed;
+  inset-block-start: 0.75rem;
+  inset-inline-start: 0.75rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--foreground);
+  color: var(--background);
+  font-weight: 600;
+}
+.skip-link:focus { transform: none; }
+
+/* Theme and language switches cross-fade instead of flashing. */
+html.theme-fade, html.theme-fade *, html.theme-fade *::before, html.theme-fade *::after {
+  transition: background-color 320ms var(--ease-standard), color 320ms var(--ease-standard),
+    border-color 320ms var(--ease-standard), fill 320ms var(--ease-standard) !important;
+}
+
+/* Motion preference. "system" follows the OS; "reduced" and "off" are explicit. */
+[data-motion="off"] *, [data-motion="off"] *::before, [data-motion="off"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+[data-motion="reduced"] *, [data-motion="reduced"] *::before, [data-motion="reduced"] *::after {
+  scroll-behavior: auto !important;
+}
+[data-motion="reduced"] .shimmer::after { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  [data-motion="system"] *, [data-motion="system"] *::before, [data-motion="system"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Hero: the slide timer is a CSS animation so pausing is just animation-play-state. */
+@keyframes hero-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes hero-drift { from { transform: scale(1); } to { transform: scale(1.07); } }
+.hero-art img { animation: hero-drift var(--hero-drift, 12s) ease-out forwards; transform-origin: 60% 40%; }

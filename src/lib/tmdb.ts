@@ -1,0 +1,460 @@
+import type {
+  TMDBMediaItem,
+  TMDBSeasonDetails,
+  TMDBSeasonSummary,
+  TMDBImagesResponse,
+  MediaType,
+  Language,
+  ArtworkLanguage,
+  TMDBGenre,
+  TMDBPerson,
+  TMDBPersonCredits,
+  TMDBSearchPersonResult,
+  CatalogFilters,
+  SortOption,
+} from "./types";
+
+const TMDB_BASE_URL = "/api/tmdb";
+
+export type ImageSize = "w92" | "w154" | "w185" | "w342" | "w500" | "w780" | "w1280" | "original";
+
+export function getTMDBImageUrl(
+  path: string | null | undefined,
+  size: ImageSize = "w500"
+): string {
+  if (!path) {
+    // Neutral placeholder that fits the dark cinema theme.
+    return "data:image/svg+xml;utf8," + encodeURIComponent(
+      `<svg xmlns='http://www.w3.org/2000/svg' width='500' height='750' viewBox='0 0 500 750'><rect width='500' height='750' fill='#12141a'/><text x='250' y='375' font-family='monospace' font-size='28' fill='#1f2833' text-anchor='middle'>ONYX</text></svg>`
+    );
+  }
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
+
+export interface TMDBRequestOptions {
+  artworkLang?: ArtworkLanguage;
+  uiLang?: Language;
+  page?: number;
+}
+
+/** Build TMDB query params honoring dual artwork / UI language. */
+function buildParams(options: TMDBRequestOptions = {}): URLSearchParams {
+  const params = new URLSearchParams();
+  const artworkLang = options.artworkLang ?? "en";
+  const uiLang = options.uiLang ?? "en";
+
+  if (artworkLang === "ar" || uiLang === "ar") {
+    // Arabic-localized metadata + Arabic-included artwork per spec.
+    params.set("language", "ar-SA");
+    params.set("include_image_language", "ar,en,null");
+  } else {
+    params.set("language", "en-US");
+    params.set("include_image_language", "en,null");
+  }
+
+  if (options.page) {
+    params.set("page", String(options.page));
+  }
+
+  return params;
+}
+
+async function tmdbFetch<T>(endpoint: string, params: URLSearchParams): Promise<T | null> {
+  try {
+    const res = await fetch(`${TMDB_BASE_URL}/${endpoint}?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
+interface TMDBListResponse<T> {
+  page: number;
+  results: T[];
+  total_pages: number;
+  total_results: number;
+}
+
+function withMediaType(items: TMDBMediaItem[], type: MediaType): TMDBMediaItem[] {
+  return items.map((item) => ({ ...item, media_type: item.media_type ?? type }));
+}
+
+export async function fetchTrending(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("trending/all/day", params);
+  if (!data) return [];
+  return (data.results || []).filter((i) => i.poster_path || i.backdrop_path);
+}
+
+export async function fetchPopularMovies(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("movie/popular", params);
+  if (!data) return [];
+  return withMediaType(data.results || [], "movie");
+}
+
+export async function fetchPopularTV(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("tv/popular", params);
+  if (!data) return [];
+  return withMediaType(data.results || [], "tv");
+}
+
+export async function fetchAnime(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  params.set("with_genres", "16");
+  params.set("with_original_language", "ja");
+  params.set("sort_by", "popularity.desc");
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("discover/tv", params);
+  if (!data) return [];
+  return withMediaType(data.results || [], "tv");
+}
+
+export async function fetchCartoons(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  params.set("with_genres", "16");
+  params.set("without_original_language", "ja");
+  params.set("sort_by", "popularity.desc");
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("discover/tv", params);
+  if (!data) return [];
+  return withMediaType(data.results || [], "tv");
+}
+
+export async function fetchTopRated(
+  type: MediaType = "movie",
+  options: TMDBRequestOptions = {}
+): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>(`${type}/top_rated`, params);
+  if (!data) return [];
+  return withMediaType(data.results || [], type);
+}
+
+export async function fetchUpcoming(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("movie/upcoming", params);
+  if (!data) return [];
+  return withMediaType(data.results || [], "movie");
+}
+
+export async function searchMulti(query: string, options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
+  if (!query.trim()) return [];
+  const params = buildParams(options);
+  params.set("query", query.trim());
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("search/multi", params);
+  if (!data) return [];
+  return (data.results || []).filter(
+    (i) => (i.media_type === "movie" || i.media_type === "tv") && (i.poster_path || i.backdrop_path)
+  );
+}
+
+export async function fetchDetails(
+  id: number,
+  type: MediaType,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBMediaItem | null> {
+  const params = buildParams(options);
+  params.set("append_to_response", "credits,images,recommendations,similar,videos");
+  const data = await tmdbFetch<TMDBMediaItem>(`${type}/${id}`, params);
+  if (!data) return null;
+  return { ...data, media_type: type };
+}
+
+/** Real season/episode counts for a series (specials, season 0, are excluded). */
+export async function fetchShowStructure(
+  tvId: number,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBSeasonSummary[]> {
+  const data = await tmdbFetch<TMDBMediaItem>(`tv/${tvId}`, buildParams(options));
+  return (data?.seasons ?? [])
+    .filter((s) => s.season_number > 0 && s.episode_count > 0)
+    .sort((a, b) => a.season_number - b.season_number);
+}
+
+export async function fetchSeasonDetails(
+  tvId: number,
+  seasonNumber: number,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBSeasonDetails | null> {
+  const params = buildParams(options);
+  return await tmdbFetch<TMDBSeasonDetails>(`tv/${tvId}/season/${seasonNumber}`, params);
+}
+
+export async function fetchMediaImages(
+  id: number,
+  type: MediaType
+): Promise<TMDBImagesResponse | null> {
+  const params = new URLSearchParams({ include_image_language: "ar,en,null" });
+  return await tmdbFetch<TMDBImagesResponse>(`${type}/${id}/images`, params);
+}
+
+export async function fetchGenres(options: TMDBRequestOptions = {}): Promise<{ movie: TMDBGenre[]; tv: TMDBGenre[] }> {
+  const params = buildParams(options);
+  const [movieRes, tvRes] = await Promise.all([
+    tmdbFetch<{ genres: TMDBGenre[] }>("genre/movie/list", params),
+    tmdbFetch<{ genres: TMDBGenre[] }>("genre/tv/list", params),
+  ]);
+  return {
+    movie: movieRes?.genres ?? [],
+    tv: tvRes?.genres ?? [],
+  };
+}
+
+export async function fetchByGenre(
+  type: MediaType,
+  genreId: number,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBMediaItem[]> {
+  const params = buildParams(options);
+  params.set("with_genres", String(genreId));
+  params.set("sort_by", "popularity.desc");
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>(`discover/${type}`, params);
+  if (!data) return [];
+  return withMediaType(data.results || [], type);
+}
+
+/**
+ * Full discover with rich filtering for the Catalog browser.
+ * Returns the raw list response (so callers can read page / total_pages).
+ */
+export async function discoverMedia(
+  filters: CatalogFilters,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBListResponse<TMDBMediaItem>> {
+  const params = buildParams(options);
+  const { type, genreIds, yearFrom, yearTo, minRating, originalLanguage, region, sortBy, page } = filters;
+
+  if (genreIds.length > 0) {
+    // "," = AND, "|" = OR. Use AND when one genre, OR when multiple.
+    params.set("with_genres", genreIds.join(","));
+  }
+  if (yearFrom || yearTo) {
+    const dateKey = type === "movie" ? "primary_release_date" : "first_air_date";
+    const from = `${yearFrom ?? 1900}-01-01`;
+    const to = `${yearTo ?? new Date().getFullYear() + 1}-12-31`;
+    params.set(`${dateKey}.gte`, from);
+    params.set(`${dateKey}.lte`, to);
+  }
+  if (minRating) {
+    params.set("vote_average.gte", String(minRating));
+    params.set("vote_count.gte", "50");
+  }
+  if (originalLanguage) {
+    params.set("with_original_language", originalLanguage);
+  }
+  if (filters.region) {
+    params.set("region", filters.region);
+  }
+  params.set("sort_by", sortBy);
+  params.set("page", String(page || 1));
+  params.set("include_adult", "false");
+
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>(`discover/${type}`, params);
+  return data ?? { page: 1, results: [], total_pages: 0, total_results: 0 };
+}
+
+/**
+ * Search people (directors / actors / crew). Returns person results with
+ * `known_for` sample titles.
+ */
+export async function searchPerson(
+  query: string,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBSearchPersonResult[]> {
+  if (!query.trim()) return [];
+  const params = buildParams(options);
+  params.set("query", query.trim());
+  const data = await tmdbFetch<TMDBListResponse<TMDBSearchPersonResult>>("search/person", params);
+  if (!data) return [];
+  return (data.results || []).filter((p) => p.profile_path || (p.known_for && p.known_for.length));
+}
+
+/**
+ * Loose-search normalization: lowercase, strips Arabic diacritics/tatweel,
+ * unifies alef & yaa variants, and removes the punctuation (commas, colons,
+ * dashes…) that often separates words in titles, so a query typed without
+ * the comma still matches a title that contains one.
+ */
+export function normalizeForSearch(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[\u064B-\u0652\u0670\u0640]/g, "")
+    .replace(/[\u0623\u0625\u0622\u0671]/g, "\u0627")
+    .replace(/\u0649/g, "\u064A")
+    .replace(/\u0629/g, "\u0647")
+    .replace(/[.,:;\u060C\u061B!?\u061F'\u2019\u201C\u201D"\u002D\u2013\u2014_()[\]{}<>«»/\\|*&^%$#@~`+=]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+interface MultiSearchBucket {
+  media: TMDBMediaItem[];
+  people: TMDBSearchPersonResult[];
+}
+
+/** Raw multi search in one specific TMDB language (no artwork mixing). */
+async function searchMultiInLang(query: string, language: "en-US" | "ar-SA"): Promise<MultiSearchBucket> {
+  const params = new URLSearchParams({ language, query });
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem | TMDBSearchPersonResult>>(
+    "search/multi",
+    params
+  );
+  const media: TMDBMediaItem[] = [];
+  const people: TMDBSearchPersonResult[] = [];
+  if (!data) return { media, people };
+  for (const r of data.results || []) {
+    // search/multi mixes three shapes; `media_type` is the discriminator.
+    const kind = (r as { media_type?: string }).media_type;
+    if (kind === "person") {
+      const p = r as TMDBSearchPersonResult;
+      if (p.profile_path || (p.known_for && p.known_for.length)) people.push(p);
+    } else if (kind === "movie" || kind === "tv") {
+      const m = r as TMDBMediaItem;
+      if (m.poster_path || m.backdrop_path) media.push(m);
+    }
+  }
+  return { media, people };
+}
+
+/** Combined multi-search that returns both media and person results. */
+export async function searchMultiWithPeople(
+  query: string,
+  options: TMDBRequestOptions = {}
+): Promise<{ media: TMDBMediaItem[]; people: TMDBSearchPersonResult[] }> {
+  const q = query.trim();
+  if (!q) return { media: [], people: [] };
+
+  // Search BOTH languages so an Arabic name finds an English-listed title and
+  // vice versa, then merge the two result sets (primary language first).
+  const primary: "en-US" | "ar-SA" =
+    options.uiLang === "ar" || options.artworkLang === "ar" ? "ar-SA" : "en-US";
+  const secondary: "en-US" | "ar-SA" = primary === "ar-SA" ? "en-US" : "ar-SA";
+
+  let [main, other] = await Promise.all([searchMultiInLang(q, primary), searchMultiInLang(q, secondary)]);
+
+  // Punctuation-insensitive fallback: if nothing came back (e.g. the query
+  // omits a comma the original title has), retry with the punctuation stripped.
+  const loose = normalizeForSearch(q);
+  if (loose && loose !== q.toLowerCase() && main.media.length + main.people.length + other.media.length + other.people.length === 0) {
+    const [mainLoose, otherLoose] = await Promise.all([
+      searchMultiInLang(loose, primary),
+      searchMultiInLang(loose, secondary),
+    ]);
+    main = mainLoose;
+    other = otherLoose;
+  }
+
+  // Merge: primary-language results keep their order and localized titles;
+  // the other language fills in the bilingual title fields and adds anything
+  // the primary search missed.
+  const otherLang: "en" | "ar" = secondary === "ar-SA" ? "ar" : "en";
+  const titleKey = `title_${otherLang}` as const;
+  const nameKey = `name_${otherLang}` as const;
+  const overviewKey = `overview_${otherLang}` as const;
+
+  const mediaById = new Map<string, TMDBMediaItem>();
+  for (const m of main.media) mediaById.set(`${m.media_type}-${m.id}`, m);
+
+  const media: TMDBMediaItem[] = main.media.map((m) => {
+    const o = other.media.find((x) => x.id === m.id && x.media_type === m.media_type);
+    if (!o) return m;
+    return {
+      ...m,
+      [titleKey]: o.title ?? o.original_title,
+      [nameKey]: o.name ?? o.original_name,
+      [overviewKey]: o.overview,
+    } as TMDBMediaItem;
+  });
+  for (const o of other.media) {
+    const key = `${o.media_type}-${o.id}`;
+    if (mediaById.has(key)) continue;
+    mediaById.set(key, o);
+    media.push(o);
+  }
+
+  const peopleById = new Set<number>();
+  const people: TMDBSearchPersonResult[] = [];
+  for (const p of [...main.people, ...other.people]) {
+    if (peopleById.has(p.id)) continue;
+    peopleById.add(p.id);
+    people.push(p);
+  }
+
+  return { media, people };
+}
+
+export async function fetchPerson(
+  id: number,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBPerson | null> {
+  const params = buildParams(options);
+  params.set("append_to_response", "movie_credits,tv_credits,combined_credits,images,external_ids");
+  const data = await tmdbFetch<TMDBPerson>(`person/${id}`, params);
+  if (!data) return null;
+  return { ...data, media_type: "person" };
+}
+
+export async function fetchPersonCredits(
+  id: number,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBPersonCredits | null> {
+  const params = buildParams(options);
+  // combined_credits gives both movie & tv cast/crew in one call.
+  const data = await tmdbFetch<{ id: number; cast: TMDBPersonCredits["cast"]; crew: TMDBPersonCredits["crew"] }>(
+    `person/${id}/combined_credits`,
+    params
+  );
+  if (!data) return null;
+  return { id: data.id, cast: data.cast ?? [], crew: data.crew ?? [] };
+}
+
+/** Languages offered in the catalog filter, with localized labels. */
+export const ORIGINAL_LANGUAGES: { code: string; label: string; labelAr: string }[] = [
+  { code: "en", label: "English", labelAr: "الإنجليزية" },
+  { code: "ar", label: "Arabic", labelAr: "العربية" },
+  { code: "ja", label: "Japanese", labelAr: "اليابانية" },
+  { code: "ko", label: "Korean", labelAr: "الكورية" },
+  { code: "fr", label: "French", labelAr: "الفرنسية" },
+  { code: "es", label: "Spanish", labelAr: "الإسبانية" },
+  { code: "de", label: "German", labelAr: "الألمانية" },
+  { code: "tr", label: "Turkish", labelAr: "التركية" },
+  { code: "hi", label: "Hindi", labelAr: "الهندية" },
+  { code: "zh", label: "Chinese", labelAr: "الصينية" },
+  { code: "it", label: "Italian", labelAr: "الإيطالية" },
+  { code: "ru", label: "Russian", labelAr: "الروسية" },
+];
+
+export const SORT_OPTIONS: { value: SortOption; label: string; labelAr: string }[] = [
+  { value: "popularity.desc", label: "Popularity ↓", labelAr: "الأكثر رواجاً" },
+  { value: "popularity.asc", label: "Popularity ↑", labelAr: "الأقل رواجاً" },
+  { value: "vote_average.desc", label: "Rating ↓", labelAr: "الأعلى تقييماً" },
+  { value: "vote_average.asc", label: "Rating ↑", labelAr: "الأقل تقييماً" },
+  { value: "primary_release_date.desc", label: "Newest", labelAr: "الأحدث" },
+  { value: "primary_release_date.asc", label: "Oldest", labelAr: "الأقدم" },
+  { value: "title.asc", label: "Title A–Z", labelAr: "الاسم أ–ي" },
+  { value: "title.desc", label: "Title Z–A", labelAr: "الاسم ي–أ" },
+];
+
+/** Get a localized runtime string. */
+export function formatRuntime(minutes?: number): string | null {
+  if (!minutes || minutes <= 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+/**
+ * Returns the "other language" title for a media item, given its primary title.
+ * Used by bilingual card display — picks whichever of title_en/title_ar differs
+ * from the primary, falling back to the original-language title.
+ */
+export function getBilingualOtherTitle(media: TMDBMediaItem, primaryTitle: string): string | undefined {
+  if (media.title_en && media.title_en !== primaryTitle) return media.title_en;
+  if (media.title_ar && media.title_ar !== primaryTitle) return media.title_ar;
+  const orig = media.original_title || media.original_name;
+  if (orig && orig !== primaryTitle) return orig;
+  return undefined;
+}
