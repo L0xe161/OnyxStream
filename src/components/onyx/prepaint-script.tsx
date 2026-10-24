@@ -33,7 +33,6 @@ d.lang=lang;d.dir=lang==="ar"?"rtl":"ltr";
 d.classList.remove("theme-dark","theme-light","theme-frosted");d.classList.add("theme-"+theme);
 d.dataset.corners=st.corners||"soft";d.dataset.density=st.density||"comfortable";
 d.dataset.poster=st.posterSize||"md";d.dataset.motion=st.motion||"system";d.dataset.font=st.fontStyle||"editorial";
-d.style.setProperty("--text-scale",String((st.textScale||100)/100));
 var a=${JSON.stringify(accentTable)}[theme][s.accent]||${JSON.stringify(accentTable)}[theme]["white"];
 if(a){d.style.setProperty("--primary",a[0]);d.style.setProperty("--primary-foreground",a[1]);d.style.setProperty("--accent",a[2]);d.style.setProperty("--ring",a[0]);}
 var m=document.querySelector('meta[name="theme-color"]');

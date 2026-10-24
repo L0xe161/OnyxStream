@@ -171,9 +171,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
             <Field label={t.setDensity} stacked>
               <Segmented label={t.setDensity} value={settings.density} onChange={set("density")} options={[{ value: "compact", label: t.densityCompact }, { value: "comfortable", label: t.densityComfortable }, { value: "spacious", label: t.densitySpacious }]} />
             </Field>
-            <Field label={t.setTextSize}>
-              <Segmented label={t.setTextSize} value={settings.textScale} onChange={set("textScale")} options={[{ value: 90, label: "90%" }, { value: 100, label: "100%" }, { value: 112, label: "112%" }, { value: 125, label: "125%" }]} />
-            </Field>
             <Field label={t.setFont}>
               <Segmented label={t.setFont} value={settings.fontStyle} onChange={set("fontStyle")} options={[{ value: "editorial", label: t.fontEditorial }, { value: "neutral", label: t.fontNeutral }]} />
             </Field>

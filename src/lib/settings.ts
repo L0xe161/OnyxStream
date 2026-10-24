@@ -36,8 +36,6 @@ export interface Settings {
   followSystemTheme: boolean;
   corners: CornerStyle;
   density: Density;
-  /** Root font scale in percent. */
-  textScale: 90 | 100 | 112 | 125;
   posterSize: PosterSize;
   fontStyle: FontStyle;
   browseLayout: "rows" | "grid";
@@ -68,7 +66,6 @@ export const DEFAULT_SETTINGS: Settings = {
   followSystemTheme: false,
   corners: "soft",
   density: "comfortable",
-  textScale: 100,
   posterSize: "md",
   fontStyle: "editorial",
   browseLayout: "rows",

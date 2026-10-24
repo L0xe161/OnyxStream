@@ -51,7 +51,6 @@ export function useThemeApplier() {
     root.dataset.poster = settings.posterSize;
     root.dataset.motion = settings.motion;
     root.dataset.font = settings.fontStyle;
-    root.style.setProperty("--text-scale", String(settings.textScale / 100));
 
     document.querySelector('meta[name="theme-color"]')?.setAttribute("content", BROWSER_CHROME[theme]);
 
