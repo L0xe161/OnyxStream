@@ -27,7 +27,11 @@ const surface: Record<OverlayVariant, string> = {
     "fixed inset-x-0 bottom-0 top-8 z-50 mx-auto flex max-w-5xl flex-col overflow-hidden rounded-t-[var(--radius-xl)] bg-card text-card-foreground outline-none sm:inset-y-8 sm:rounded-[var(--radius-xl)]",
   theater: "fixed inset-0 z-50 flex flex-col bg-black text-white outline-none",
   sheet:
-    "fixed inset-x-0 bottom-0 z-50 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-[var(--radius-xl)] bg-card text-card-foreground outline-none sm:inset-y-0 sm:bottom-auto sm:end-0 sm:start-auto sm:max-h-none sm:w-[26rem] sm:rounded-none",
+    // Bottom sheet on phones; full-height side sheet on wide screens. Both
+    // edges pinned on desktop (`sm:inset-y-0`, no `bottom-auto`) so the sheet
+    // has a definite height — that is what lets the inner flex-1 scroll area
+    // actually scroll. The max-h cap stays for the phone bottom sheet.
+    "fixed inset-x-0 bottom-0 z-50 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-[var(--radius-xl)] bg-card text-card-foreground outline-none sm:inset-y-0 sm:max-h-none sm:end-0 sm:start-auto sm:w-[26rem] sm:rounded-none",
 };
 
 function contentVariants(variant: OverlayVariant, dir: "ltr" | "rtl", reduced: boolean, off: boolean): Variants {
