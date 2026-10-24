@@ -5,7 +5,7 @@ import type { TMDBMediaItem } from "./types";
  * their release date (and until release day for future-dated titles).
  * TV series are never gated.
  */
-export const MOVIE_AVAILABILITY_DELAY_DAYS = 90;
+export const MOVIE_AVAILABILITY_DELAY_DAYS = 30;
 
 const DAY_MS = 86_400_000;
 
@@ -38,7 +38,7 @@ export function daysSinceMovieRelease(media: TMDBMediaItem, now: Date = new Date
  *
  * The verdict is derived from the clock on every call — nothing is cached or
  * persisted — so it updates automatically as time passes, with no manual
- * intervention: a movie that crosses the 90-day line simply starts playing
+ * intervention: a movie that crosses the 30-day line simply starts playing
  * the next time it is opened.
  */
 export function isComingSoonMovie(media: TMDBMediaItem, now: Date = new Date()): boolean {

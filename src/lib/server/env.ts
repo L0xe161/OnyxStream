@@ -10,7 +10,7 @@ export class MissingEnvError extends Error {
   }
 }
 
-export function requireEnv(name: "TMDB_API_KEY" | "SUBDL_API_KEY"): string {
+export function requireEnv(name: "TMDB_API_KEY"): string {
   const value = process.env[name]?.trim();
   if (!value) throw new MissingEnvError(name);
   return value;
