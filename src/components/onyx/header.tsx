@@ -59,7 +59,11 @@ export function Header() {
   const t = getT(lang);
 
   const desktop = useNavTabs(5);
-  const mobile = useNavTabs(4);
+  // Mobile shows all 5 primary tabs (Home, Movies, TV, Anime, Catalog) so the
+  // Catalog tab sits next to the others in the bottom bar instead of being
+  // buried in the "More" (•••) overflow menu. "More" keeps the non-primary
+  // tabs (Cartoons, Favorites).
+  const mobile = useNavTabs(5);
 
   return (
     <>
@@ -110,7 +114,7 @@ export function Header() {
             const active = currentTab === tab.id;
             return (
               <li key={tab.id} className="flex-1">
-                <button type="button" onClick={() => setCurrentTab(tab.id)} aria-current={active ? "page" : undefined} className={cn("relative flex h-14 w-full items-center justify-center text-[0.8125rem] font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4", active ? "text-foreground" : "text-muted-foreground")}>
+                <button type="button" onClick={() => setCurrentTab(tab.id)} aria-current={active ? "page" : undefined} className={cn("relative flex h-14 w-full items-center justify-center whitespace-nowrap text-[0.8125rem] font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-4", active ? "text-foreground" : "text-muted-foreground")}>
                   {t[tab.labelKey]}
                   {active && <motion.span layoutId="nav-tab-mobile" transition={transition.spring} className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-[var(--primary)]" />}
                 </button>

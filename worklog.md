@@ -178,3 +178,20 @@ Work Log:
 Stage Summary:
 - Modified: `src/hooks/use-drag-scroll.ts` only.
 - Posters now open on tap and Continue-Watching ✕ now removes items — both fixed by not capturing the pointer on every press and by raising the drag threshold above click jitter. Real drag-to-scroll + click-after-drag suppression are preserved.
+
+---
+Task ID: 9
+Agent: Z.ai Code (main orchestrator)
+Task: Move the "Catalog" tab out of the "More" (•••) overflow menu and place it next to the other tabs in the mobile bottom nav bar
+
+Work Log:
+- `src/components/onyx/header.tsx` — the mobile bottom nav used `useNavTabs(4)`, so only the first 4 primary tabs (Home, Movies, TV, Anime) rendered in the bar; Catalog — the 5th primary tab per `TAB_DEFINITIONS` — was sliced off into the "More" overflow dropdown. Changed the mobile primary limit from 4 → 5 (`useNavTabs(5)`), so all 5 primary tabs (Home, Movies, TV, Anime, Catalog) now render directly in the bottom bar. The "More" menu keeps the non-primary tabs (Cartoons, Favorites). Desktop was already `useNavTabs(5)` — unchanged.
+- Added `whitespace-nowrap` to the mobile tab button so the tighter 6-item bar (5 labels + the More icon) never wraps a label to a second line.
+- Verified with agent-browser at 390×844 (mobile):
+  * EN (LTR): bottom bar = "Home, Movies, TV Shows, Anime, Catalog, More" (6 items). Per-item widths: 62/62/63/62/62/44px, no overflow. Tapping "Catalog" → `?tab=catalog`, catalog heading visible.
+  * AR (RTL, dir=rtl lang=ar): bottom bar = "الرئيسية، أفلام، مسلسلات، أنمي، المعرض، المزيد". Per-item widths all 62px (More 44px), no overflow. The "More" dropdown now lists only "رسوم متحركة" (Cartoons) + "المفضلة" (Favorites) — Catalog ("المعرض") is no longer in it.
+  * `bun run lint` exit 0, `bunx tsc --noEmit` 0 errors. Dev log clean.
+
+Stage Summary:
+- Modified: `src/components/onyx/header.tsx` only (mobile `useNavTabs(4)` → `useNavTabs(5)` + `whitespace-nowrap` on the mobile tab button).
+- The Catalog tab now sits next to Home / Movies / TV / Anime in the mobile bottom nav on both EN and AR; the "More" (•••) menu retains Cartoons + Favorites.
