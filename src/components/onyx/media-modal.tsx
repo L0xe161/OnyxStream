@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronRight, ExternalLink, Heart, Info, Loader2, Play, Star, X } from "lucide-react";
 import { Overlay, OverlayClose } from "./overlay";
 import { MediaCard } from "./media-card";
@@ -9,6 +9,7 @@ import { formatRuntime, getBilingualOtherTitle } from "@/lib/tmdb";
 import { useDetails, useSeason } from "@/hooks/use-tmdb";
 import { useShowStructure } from "@/hooks/use-show-structure";
 import { useArtworkAccent } from "@/hooks/use-artwork-accent";
+import { useDragScroll } from "@/hooks/use-drag-scroll";
 import { useOnyxStore } from "@/lib/store";
 import { dirFor, getT } from "@/lib/i18n";
 import { toggleFavoriteWithUndo } from "@/lib/actions";
@@ -44,6 +45,12 @@ function ModalBody({ media, onClose, onPlay, lang, artworkLang, bilingual = fals
   const t = getT(lang);
   const setActivePerson = useOnyxStore((s) => s.setActivePerson);
   const [selectedSeason, setSelectedSeason] = useState(1);
+  // Drag-to-scroll for the Cast and More-Like-This carousels so a mouse drag
+  // scrolls instead of selecting the photos / titles inside them.
+  const castRef = useRef<HTMLUListElement>(null);
+  const castScroll = useDragScroll<HTMLUListElement>(castRef);
+  const recsRef = useRef<HTMLUListElement>(null);
+  const recsScroll = useDragScroll<HTMLUListElement>(recsRef);
 
   const isTv = media.media_type === "tv" || !!media.first_air_date;
   const { details, loading } = useDetails(media, lang, artworkLang);
@@ -142,7 +149,7 @@ function ModalBody({ media, onClose, onPlay, lang, artworkLang, bilingual = fals
           {cast.length > 0 && (
             <section aria-label={t.cast}>
               <h3 className="mb-4 font-display text-title">{t.cast}</h3>
-              <ul className="-mx-6 flex gap-4 overflow-x-auto px-6 pb-2 scrollbar-none sm:-mx-10 sm:px-10">
+              <ul ref={castRef} onPointerDown={castScroll.onPointerDown} onPointerMove={castScroll.onPointerMove} onPointerUp={castScroll.onPointerUp} onPointerCancel={castScroll.onPointerCancel} className="drag-scroll -mx-6 flex gap-4 overflow-x-auto px-6 pb-2 scrollbar-none sm:-mx-10 sm:px-10">
                 {cast.map((c) => (
                   <li key={c.id} className="w-24 shrink-0">
                     <button type="button" onClick={() => openPerson(c.id, c.name, c.profile_path, "Acting")} className="group block w-full text-center focus-visible:outline-2">
@@ -190,7 +197,7 @@ function ModalBody({ media, onClose, onPlay, lang, artworkLang, bilingual = fals
           {recs.length > 0 && (
             <section aria-label={t.recommendations}>
               <h3 className="mb-4 font-display text-title">{t.recommendations}</h3>
-              <ul className="-mx-6 flex gap-4 overflow-x-auto px-6 pb-2 scrollbar-none sm:-mx-10 sm:px-10">
+              <ul ref={recsRef} onPointerDown={recsScroll.onPointerDown} onPointerMove={recsScroll.onPointerMove} onPointerUp={recsScroll.onPointerUp} onPointerCancel={recsScroll.onPointerCancel} className="drag-scroll -mx-6 flex gap-4 overflow-x-auto px-6 pb-2 scrollbar-none sm:-mx-10 sm:px-10">
                 {recs.map((r) => (
                   <li key={r.id} className="w-36 shrink-0">
                     <MediaCard media={r} lang={lang} bilingual={bilingual} onPlay={(m) => { onPlay(m); onClose(); }} onSelectDetails={(m) => useOnyxStore.getState().setDetailsMedia(m)} />

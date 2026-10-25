@@ -10,6 +10,7 @@ import type {
   TMDBPerson,
   TMDBPersonCredits,
   TMDBSearchPersonResult,
+  TMDBTranslation,
   CatalogFilters,
   SortOption,
 } from "./types";
@@ -201,10 +202,73 @@ export async function fetchDetails(
   options: TMDBRequestOptions = {}
 ): Promise<TMDBMediaItem | null> {
   const params = buildParams(options);
-  params.set("append_to_response", "credits,images,recommendations,similar,videos");
+  // `translations` lets us fall back to the English title/overview/tagline
+  // when the requested language has no translation for a title, without a
+  // second API round-trip.
+  params.set("append_to_response", "credits,images,recommendations,similar,videos,translations");
   const data = await tmdbFetch<TMDBMediaItem>(`${type}/${id}`, params);
   if (!data) return null;
-  return { ...data, media_type: type };
+  const item = { ...data, media_type: type };
+  applyTranslationFallback(item);
+  return item;
+}
+
+/**
+ * True when a string is missing or only whitespace — TMDB returns "" for a
+ * field that has no translation in the requested language.
+ */
+const isEmpty = (s: string | undefined | null): s is "" =>
+  !s || !s.trim();
+
+/**
+ * Fills in missing localized fields from the English translation bundled in
+ * `append_to_response=translations`. TMDB returns the original-language title
+ * (and an empty overview) when the requested language has no translation, so:
+ *
+ *  - overview: if the localized overview is empty, use the English one.
+ *  - title/name: if the localized title equals the original (i.e. no
+ *    translation exists) and the English title is a real translation
+ *    (differs from the original), use the English title.
+ *  - tagline: if empty, use the English tagline.
+ *
+ * No-ops when there is no `translations` table (older responses) or no English
+ * entry; in those cases the original fields are left untouched.
+ */
+function applyTranslationFallback(item: TMDBMediaItem): void {
+  const list = item.translations?.translations;
+  if (!list || list.length === 0) return;
+  const en = findTranslation(list, "en");
+  if (!en) return;
+
+  if (isEmpty(item.overview)) {
+    const enOverview = en.data.overview;
+    if (enOverview && enOverview.trim()) item.overview = enOverview;
+  }
+  if (isEmpty(item.tagline)) {
+    const enTagline = en.data.tagline;
+    if (enTagline && enTagline.trim()) item.tagline = enTagline;
+  }
+  // Movie title: fall back to English when the localized title is missing or
+  // identical to the original (TMDB returns the original when no localized
+  // title exists).
+  if (isEmpty(item.title) || item.title === item.original_title) {
+    const enTitle = en.data.title;
+    if (enTitle && enTitle.trim() && enTitle !== item.original_title) {
+      item.title = enTitle;
+    }
+  }
+  // TV name: same logic.
+  if (isEmpty(item.name) || item.name === item.original_name) {
+    const enName = en.data.name;
+    if (enName && enName.trim() && enName !== item.original_name) {
+      item.name = enName;
+    }
+  }
+}
+
+/** Finds the first translation whose iso_639_1 matches the given language code. */
+function findTranslation(list: TMDBTranslation[], lang: string): TMDBTranslation | undefined {
+  return list.find((t) => t.iso_639_1 === lang);
 }
 
 /** Real season/episode counts for a series (specials, season 0, are excluded). */

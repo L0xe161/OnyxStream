@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MediaCard } from "./media-card";
 import { useOnyxStore } from "@/lib/store";
+import { useDragScroll } from "@/hooks/use-drag-scroll";
 import { getT } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { Language, TMDBMediaItem } from "@/lib/types";
@@ -25,6 +26,9 @@ export function CategoryRow({ title, items, lang, bilingual = false, onPlay, onS
   const t = getT(lang);
   const layout = useOnyxStore((s) => s.settings.browseLayout);
   const scroller = useRef<HTMLDivElement>(null);
+  // Drag-to-scroll uses the same element as `scroller` so the measure/page
+  // logic and the drag handlers share one node.
+  const drag = useDragScroll<HTMLDivElement>(scroller);
   const [edge, setEdge] = useState({ start: true, end: false });
 
   /** Works in LTR and RTL: scrollLeft is negative in RTL, so measure its magnitude. */
@@ -89,10 +93,14 @@ export function CategoryRow({ title, items, lang, bilingual = false, onPlay, onS
 
       <div
         ref={scroller}
+        onPointerDown={drag.onPointerDown}
+        onPointerMove={drag.onPointerMove}
+        onPointerUp={drag.onPointerUp}
+        onPointerCancel={drag.onPointerCancel}
         className={cn(
           isGrid
             ? "grid grid-cols-[repeat(auto-fill,minmax(var(--poster-w),1fr))] gap-x-4 gap-y-8"
-            : "-mx-[var(--gutter)] flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain scroll-ps-[var(--gutter)] px-[var(--gutter)] pb-2 scrollbar-none"
+            : "drag-scroll -mx-[var(--gutter)] flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain scroll-ps-[var(--gutter)] px-[var(--gutter)] pb-2 scrollbar-none"
         )}
       >
         {items.map((item) => (

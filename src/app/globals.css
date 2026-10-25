@@ -284,6 +284,26 @@
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
+/* Mouse-driven drag-to-scroll on horizontal carousels.
+   `useDragScroll` toggles [data-dragging] on pointer down/up. While a drag is
+   in progress, text selection is suppressed so dragging across posters / cast
+   photos / titles never highlights them, and the cursor flips to grabbing. */
+.drag-scroll { cursor: grab; }
+.drag-scroll[data-dragging="true"] {
+  cursor: grabbing;
+  user-select: none;
+  -webkit-user-select: none;
+  /* Free-scroll while dragging: `scroll-snap-type: x proximity` (used on
+     the category / continue-watching rows) otherwise fights the drag by
+     snapping scrollLeft back to a poster boundary mid-gesture. Snapping
+     re-engages when the attribute is cleared on pointer up. */
+  scroll-snap-type: none;
+}
+.drag-scroll[data-dragging="true"] * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* Scrims: measured gradients that adapt to each theme's ground. */
 .onyx-fade-bottom {
   background: linear-gradient(

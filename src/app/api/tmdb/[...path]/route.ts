@@ -26,7 +26,7 @@ const ENDPOINTS: readonly RegExp[] = [
 const APPEND_VALUES = new Set([
   "credits", "videos", "images", "similar", "recommendations",
   "external_ids", "release_dates", "content_ratings", "watch/providers",
-  "movie_credits", "tv_credits", "combined_credits",
+  "movie_credits", "tv_credits", "combined_credits", "translations",
 ]);
 const SORT_VALUES = /^(popularity|vote_average|vote_count|primary_release_date|first_air_date|release_date|revenue|title|name)\.(asc|desc)$/;
 

@@ -56,6 +56,10 @@ export interface TMDBMediaItem {
     results: TMDBVideo[];
   };
   images?: TMDBImagesResponse;
+  /** Full translations table (from `append_to_response=translations`). Used
+   * to fall back to the English title/overview/tagline when the requested
+   * language has no translation for a title. */
+  translations?: TMDBTranslationsResponse;
   // runtime helpers added by service
   __runtime?: number;
   // Bilingual title fields (filled when bilingual mode is on)
@@ -137,6 +141,27 @@ export interface TMDBImagesResponse {
   backdrops: TMDBImageItem[];
   posters: TMDBImageItem[];
   logos: TMDBImageItem[];
+}
+
+/** A single localized translation entry from `append_to_response=translations`. */
+export interface TMDBTranslation {
+  iso_639_1: string;
+  iso_3166_1: string;
+  name?: string;
+  english_name?: string;
+  data: {
+    title?: string;
+    name?: string;
+    overview?: string;
+    tagline?: string;
+    homepage?: string;
+  };
+}
+
+/** The translations table returned by `append_to_response=translations`. */
+export interface TMDBTranslationsResponse {
+  id: number;
+  translations: TMDBTranslation[];
 }
 
 export interface TMDBPerson {

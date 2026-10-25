@@ -1,11 +1,13 @@
 "use client";
 
+import { useRef } from "react";
 import { Play, X } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOnyxStore } from "@/lib/store";
 import { getT } from "@/lib/i18n";
 import { clearContinueWithUndo, removeContinueWithUndo } from "@/lib/actions";
 import { transition } from "@/lib/motion";
+import { useDragScroll } from "@/hooks/use-drag-scroll";
 import { TmdbImage } from "./tmdb-image";
 import type { Language, TMDBMediaItem } from "@/lib/types";
 
@@ -17,6 +19,8 @@ interface ContinueWatchingProps {
 export function ContinueWatching({ lang, onPlay }: ContinueWatchingProps) {
   const t = getT(lang);
   const items = useOnyxStore((s) => s.continueWatching);
+  const listRef = useRef<HTMLUListElement>(null);
+  const drag = useDragScroll<HTMLUListElement>(listRef);
 
   if (items.length === 0) return null;
 
@@ -29,7 +33,7 @@ export function ContinueWatching({ lang, onPlay }: ContinueWatchingProps) {
         </button>
       </div>
 
-      <ul className="-mx-[var(--gutter)] flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain scroll-ps-[var(--gutter)] px-[var(--gutter)] pb-2 scrollbar-none">
+      <ul ref={listRef} onPointerDown={drag.onPointerDown} onPointerMove={drag.onPointerMove} onPointerUp={drag.onPointerUp} onPointerCancel={drag.onPointerCancel} className="drag-scroll -mx-[var(--gutter)] flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain scroll-ps-[var(--gutter)] px-[var(--gutter)] pb-2 scrollbar-none">
         <AnimatePresence initial={false} mode="popLayout">
           {items.map((item) => {
             const title = item.media.title || item.media.name || "";

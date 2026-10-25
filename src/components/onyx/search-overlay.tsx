@@ -1,11 +1,13 @@
 "use client";
 
+import { useRef } from "react";
 import { Loader2, Search as SearchIcon, Users, X } from "lucide-react";
 import { Overlay, OverlayClose } from "./overlay";
 import { MediaCard } from "./media-card";
 import { TmdbImage } from "./tmdb-image";
 import { useOnyxStore } from "@/lib/store";
 import { useSearch } from "@/hooks/use-tmdb";
+import { useDragScroll } from "@/hooks/use-drag-scroll";
 import { dirFor, getT } from "@/lib/i18n";
 import type { TMDBMediaItem, TMDBSearchPersonResult } from "@/lib/types";
 
@@ -23,6 +25,8 @@ export function SearchOverlay({ onClose, onPlay, onSelectDetails, onSelectPerson
   const open = useOnyxStore((s) => s.isSearchOpen);
   const query = useOnyxStore((s) => s.searchQuery);
   const setQuery = useOnyxStore((s) => s.setSearchQuery);
+  const peopleRef = useRef<HTMLUListElement>(null);
+  const peopleScroll = useDragScroll<HTMLUListElement>(peopleRef);
 
   const t = getT(lang);
   const { results, people, loading } = useSearch(query, lang, artworkLang);
@@ -70,7 +74,7 @@ export function SearchOverlay({ onClose, onPlay, onSelectDetails, onSelectPerson
           {people.length > 0 && (
             <section aria-label={t.people}>
               <h3 className="mb-3 flex items-center gap-2 text-meta text-muted-foreground"><Users className="size-4" aria-hidden />{t.people}</h3>
-              <ul className="-mx-6 flex gap-4 overflow-x-auto px-6 pb-2 scrollbar-none sm:-mx-10 sm:px-10">
+              <ul ref={peopleRef} onPointerDown={peopleScroll.onPointerDown} onPointerMove={peopleScroll.onPointerMove} onPointerUp={peopleScroll.onPointerUp} onPointerCancel={peopleScroll.onPointerCancel} className="drag-scroll -mx-6 flex gap-4 overflow-x-auto px-6 pb-2 scrollbar-none sm:-mx-10 sm:px-10">
                 {people.slice(0, 8).map((p) => (
                   <li key={p.id} className="w-24 shrink-0">
                     <button type="button" onClick={() => onSelectPerson(p)} className="group block w-full text-center focus-visible:outline-2">
