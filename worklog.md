@@ -113,3 +113,17 @@ Stage Summary:
 - Modified: `.env` (restored TMDB_API_KEY), `src/lib/settings.ts` (3 default changes), `src/lib/store.ts` (STORE_VERSION 7 + force hideWatched), `src/components/onyx/settings-sheet.tsx` (removed 7 controls + cleaned imports), `src/lib/tmdb.ts` (fetchUpcoming → discover/movie 30-day window).
 - Settings UI now shows: Accent(White default, all 9), Corners(Soft default), Density(Comfortable default), Poster(Medium default), Browse(Rows default), Hero toggle, Motion(System), Auto-advance toggle, Slider(6s default), Interface lang, Bilingual, Resume(Ask), Hide adult(off default, visible), Data, Keyboard. Hide-completed-items is force-on in the background (no toggle). Font/Home Rows/Tabs/Auto-play Next/Original Langs/Preferred Regions are gone from the UI but their persisted data still merges (no migration loss).
 - Coming Soon row = movies with <30 full days since release_date (discover/movie, UTC-windowed, safety-filtered). Movie player gate identical EN/AR: <30 days → localized notice + no iframe; ≥30 days → EmbedMaster iframe.
+
+---
+Task ID: 6
+Agent: Z.ai Code (main orchestrator)
+Task: Move Language section to be the first option in Settings (both mobile & desktop), keep the Bilingual ("external language") toggle
+
+Work Log:
+- `src/components/onyx/settings-sheet.tsx` — reordered the `<Section>` blocks inside the scroll container. The `secLanguage` section (Interface language EN/العربية + Bilingual titles switch) was moved from position #4 (between Motion and Playback) to position #1 (before Appearance). The original Language block was removed from its old position; no duplicate. New order: Language → Appearance → Layout → Motion → Playback → Content → Data & privacy → Keyboard. The `setBilingual` switch (the "external language"/bilingual titles option) is KEPT inside the Language section — explicitly not removed per the user's instruction.
+- No data-shape, store, or i18n changes — pure UI reorder. `bun run lint` exit 0, `bunx tsc --noEmit` clean.
+- Verified with agent-browser: desktop 1440×900 EN (firstSection="Language", switchesInFirstSection=["Bilingual titles"]), mobile 390×844 EN (firstSection="Language", hasBilingualSwitch=true), and Arabic RTL 390×844 (dir=rtl, lang=ar, firstHeading="اللغة", switchesInFirstSection=["عناوين بلغتين"]). Section order identical on all three. Dev log clean (no errors/warnings).
+
+Stage Summary:
+- Modified: `src/components/onyx/settings-sheet.tsx` (Language section moved to first position on both mobile bottom-sheet and desktop side-sheet — same component renders both).
+- The Bilingual titles / "external language" toggle stays in the Language section; only the section order changed.

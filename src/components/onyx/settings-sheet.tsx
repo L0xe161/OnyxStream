@@ -84,6 +84,15 @@ export function SettingsSheet({ lang }: { lang: Language }) {
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-8">
+          <Section title={t.secLanguage}>
+            <Field label={t.setInterfaceLang} hint={t.setInterfaceLangHint}>
+              <Segmented label={t.setInterfaceLang} value={lang} onChange={(v) => v !== lang && store().toggleLang()} options={[{ value: "en", label: "English" }, { value: "ar", label: "العربية" }]} />
+            </Field>
+            <Field label={t.setBilingual} hint={t.setBilingualHint}>
+              <Switch checked={bilingual} onCheckedChange={(v) => store().setBilingual(v)} aria-label={t.setBilingual} />
+            </Field>
+          </Section>
+
           <Section title={t.secAppearance}>
             <Field label={t.setAccent} hint={resolved.adjusted ? t.accentAdjusted : undefined} stacked>
               <div role="radiogroup" aria-label={t.setAccent} className="flex flex-wrap gap-2">
@@ -148,15 +157,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
             </Field>
             <Field label={t.setHeroInterval}>
               <Segmented label={t.setHeroInterval} value={settings.heroIntervalMs} onChange={set("heroIntervalMs")} options={[{ value: 6000, label: "6" }, { value: 8000, label: "8" }, { value: 12000, label: "12" }]} />
-            </Field>
-          </Section>
-
-          <Section title={t.secLanguage}>
-            <Field label={t.setInterfaceLang} hint={t.setInterfaceLangHint}>
-              <Segmented label={t.setInterfaceLang} value={lang} onChange={(v) => v !== lang && store().toggleLang()} options={[{ value: "en", label: "English" }, { value: "ar", label: "العربية" }]} />
-            </Field>
-            <Field label={t.setBilingual} hint={t.setBilingualHint}>
-              <Switch checked={bilingual} onCheckedChange={(v) => store().setBilingual(v)} aria-label={t.setBilingual} />
             </Field>
           </Section>
 
