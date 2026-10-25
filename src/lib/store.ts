@@ -6,6 +6,7 @@ import type {
   Language,
   ArtworkLanguage,
   CategoryTab,
+  MediaType,
   TMDBMediaItem,
   ContinueWatchingItem,
   TMDBPerson,
@@ -15,6 +16,7 @@ import { ACCENTS } from "./themes";
 import { DEFAULT_CATALOG, type CatalogState } from "./url-state";
 import { STORE_KEY } from "./storage-keys";
 import { DEFAULT_HOME_ROWS, DEFAULT_SETTINGS, DEFAULT_TABS, reconcileList, type Settings } from "./settings";
+import { fetchItem } from "./tmdb";
 
 /** Bump when the persisted shape changes and extend `migrate` below. */
 export const STORE_VERSION = 7;
@@ -66,6 +68,12 @@ export interface OnyxState {
   setProgress: (id: number, progress: number) => void;
   restoreContinueWatching: (item: ContinueWatchingItem) => void;
   clearContinueWatching: () => void;
+
+  /** Re-fetch localized title/overview/artwork for every stored list snapshot
+   *  (favorites + continue-watching) so they follow the active interface
+   *  language. Fire-and-forget; only commits if the language hasn't changed
+   *  again while the fetches were in flight. */
+  refreshLocalizedLists: (lang: Language, artworkLang: ArtworkLanguage) => void;
 
   // Active player
   activeMedia: TMDBMediaItem | null;
@@ -191,14 +199,54 @@ export const useOnyxStore = create<OnyxState>()(
       lang: "en",
       artworkLang: "en",
       bilingual: false,
-      setLang: (lang) => set({ lang, artworkLang: lang }),
-      toggleLang: () =>
-        set((s) => ({ lang: s.lang === "en" ? "ar" : "en", artworkLang: s.lang === "en" ? "ar" : "en" })),
+      setLang: (lang) => {
+        set({ lang, artworkLang: lang });
+        // Stored list snapshots (favorites, continue-watching) hold the
+        // title/overview/artwork from the OLD language; refresh them so the
+        // whole UI — not just the live catalog rows — follows the switch.
+        void get().refreshLocalizedLists(lang, lang);
+      },
+      toggleLang: () => {
+        const newLang = get().lang === "en" ? "ar" : "en";
+        set({ lang: newLang, artworkLang: newLang });
+        void get().refreshLocalizedLists(newLang, newLang);
+      },
       setArtworkLang: (artworkLang) => set({ artworkLang }),
       toggleArtworkLang: () =>
         set((s) => ({ artworkLang: s.artworkLang === "en" ? "ar" : "en" })),
       setBilingual: (bilingual) => set({ bilingual }),
       toggleBilingual: () => set((s) => ({ bilingual: !s.bilingual })),
+
+      /**
+       * Re-fetches the localized title/overview/poster/backdrop for every
+       * stored favorite and continue-watching item in the active language,
+       * then updates the snapshots in place. Fire-and-forget; a stale fetch
+       * that resolves after another language switch is discarded (the lang
+       * guard prevents writing the wrong language back). Items that fail to
+       * fetch keep their previous snapshot so a network blip never wipes a
+       * user's lists.
+       */
+      refreshLocalizedLists: (lang, artworkLang) => {
+        const { favorites, continueWatching } = get();
+        const itemType = (media: TMDBMediaItem): MediaType =>
+          media.media_type === "tv" || !!media.first_air_date ? "tv" : "movie";
+        const fetchOne = async (media: TMDBMediaItem): Promise<TMDBMediaItem> => {
+          const item = await fetchItem(media.id, itemType(media), { artworkLang, uiLang: lang });
+          return item ?? media;
+        };
+        if (favorites.length > 0) {
+          void Promise.all(favorites.map(fetchOne)).then((localized) => {
+            if (get().lang === lang) set({ favorites: localized });
+          });
+        }
+        if (continueWatching.length > 0) {
+          void Promise.all(
+            continueWatching.map(async (c) => ({ ...c, media: await fetchOne(c.media) }))
+          ).then((updated) => {
+            if (get().lang === lang) set({ continueWatching: updated });
+          });
+        }
+      },
 
       theme: "dark",
       accent: "white",
@@ -236,7 +284,13 @@ export const useOnyxStore = create<OnyxState>()(
         }),
       isFavorite: (id) => get().favorites.some((f) => f.id === id),
       clearFavorites: () => set({ favorites: [] }),
-      importData: (data) => set((s) => ({ ...s, ...sanitizePersisted(data, s) })),
+      importData: (data) => {
+        set((s) => ({ ...s, ...sanitizePersisted(data, s) }));
+        // Imported favorites / continue-watching snapshots may be in a
+        // different language than the active one; refresh them to match.
+        const { lang, artworkLang } = get();
+        void get().refreshLocalizedLists(lang, artworkLang);
+      },
       resetAll: () =>
         set({
           settings: DEFAULT_SETTINGS,

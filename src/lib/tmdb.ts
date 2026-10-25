@@ -271,6 +271,26 @@ function findTranslation(list: TMDBTranslation[], lang: string): TMDBTranslation
   return list.find((t) => t.iso_639_1 === lang);
 }
 
+/**
+ * Lightweight localized fetch for a single movie or TV item — just the
+ * title/overview/poster/backdrop in the requested language, with no
+ * `append_to_response` (no credits / images / recommendations / videos /
+ * translations). Used to refresh stored list snapshots (favorites,
+ * continue-watching) when the interface language changes, so their titles
+ * and artwork switch language without re-fetching the heavy details payload.
+ * Returns null on failure so callers can keep the previously-stored item.
+ */
+export async function fetchItem(
+  id: number,
+  type: MediaType,
+  options: TMDBRequestOptions = {}
+): Promise<TMDBMediaItem | null> {
+  const params = buildParams(options);
+  const data = await tmdbFetch<TMDBMediaItem>(`${type}/${id}`, params);
+  if (!data) return null;
+  return { ...data, media_type: type };
+}
+
 /** Real season/episode counts for a series (specials, season 0, are excluded). */
 export async function fetchShowStructure(
   tvId: number,

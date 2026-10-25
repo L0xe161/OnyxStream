@@ -195,3 +195,25 @@ Work Log:
 Stage Summary:
 - Modified: `src/components/onyx/header.tsx` only (mobile `useNavTabs(4)` → `useNavTabs(5)` + `whitespace-nowrap` on the mobile tab button).
 - The Catalog tab now sits next to Home / Movies / TV / Anime in the mobile bottom nav on both EN and AR; the "More" (•••) menu retains Cartoons + Favorites.
+
+---
+Task ID: 10
+Agent: Z.ai Code (main orchestrator)
+Task: When switching the interface language, make sure EVERYTHING follows — including movie details, favorites, and continue-watching (which were stored as language snapshots and stayed in the old language)
+
+Work Log:
+- Root cause: the live catalog rows (home / discover) and the details modal already re-fetch on language change (`useCatalog` effect deps include `lang`/`artworkLang`; `useDetails`'s TanStack query key includes them). But `favorites` and `continueWatching` in the Zustand store hold the `TMDBMediaItem` SNAPSHOT from the moment the user added the favourite / started playback — that snapshot's `title`/`name`/`overview`/`backdrop_path` never refresh, so after switching EN↔AR those rows kept showing the old-language titles while everything else had switched. Reproduced: a favourite added in EN stayed `"Lupin"` / English overview after switching to Arabic, even though the trending row (re-fetched) showed `"لوبين"`.
+- `src/lib/tmdb.ts` — added `fetchItem(id, type, options)`: a lightweight localized fetch (`GET movie/{id}` or `tv/{id}` with `language=…`, NO `append_to_response`) that returns just the title/overview/poster/backdrop in the requested language. Light (one call per item, no credits/images/etc.), and the TMDB proxy's `BoundedCache` (5 min) makes repeated refreshes cheap. Returns null on failure so callers can keep the previous snapshot.
+- `src/lib/store.ts` — added a `refreshLocalizedLists(lang, artworkLang)` action: reads current `favorites` + `continueWatching`, fires `fetchItem` for each in parallel (preserving each item's `media_type` via the same `media.media_type === "tv" || first_air_date` rule used elsewhere), and commits the localized snapshots back — but ONLY if `get().lang` still equals the `lang` the refresh was started with (so a stale fetch that resolves after another switch is discarded, never writing the wrong language back). Items that fail to fetch keep their previous snapshot (a network blip never wipes a list). No-op when both lists are empty.
+- Wired the refresh into every language-change path: `setLang`, `toggleLang` (both now compute the new lang, `set` it, then `void get().refreshLocalizedLists(newLang, newLang)`), and `importData` (imported favourites may be in a different language than the active one). `resetAll` clears the lists so there's nothing to refresh.
+- `src/app/page.tsx` — added a mount-only `useEffect` (no deps, reads from `getState()`) that calls `refreshLocalizedLists` on first render. This catches up stored snapshots left over from a previous language (or a previous app version before this refresh existed) to the active language on page load. Subsequent switches are handled by the `setLang`/`toggleLang` actions.
+- The details modal already re-fetches localized details on language change (the `useDetails` query key includes `lang`/`artworkLang`), and now that the seed `media` (a stored snapshot) is also localized, the modal's title/backdrop don't flash the old language while the fetch is in flight.
+- Verification (agent-browser 1440×900):
+  * Favourite added in EN ("Lupin", English overview) → switch to AR → store favourite: `name: "لوبين"`, `overview: "متأثّرًا بأسلوب مغامرات أرسين لوبين…"` (Arabic). Switch back to EN → `name: "Lupin"`, `overview: "Inspired by the adventures of Arsène Lupin, gentleman thief…"` (English). Was stuck in the original language before the fix.
+  * Continue-Watching seeded by playing tv-96677 in AR (`name: "لوبين"`, Arabic overview) → switch to EN → `name: "Lupin"`, `overview: "Inspired by the adventures of Arsène Lupin…"` (English). The Continue-Watching row card aria-label also switched (`"Resume: Lupin, S1 · E1"`).
+  * Details modal opened in AR (`?title=tv-96677`): title `"لوبين"`, overview Arabic — already worked via `useDetails`, now the seed snapshot matches too.
+  * `bun run lint` exit 0, `bunx tsc --noEmit` 0 errors. Dev log clean (no errors/warnings/503s).
+
+Stage Summary:
+- Modified: `src/lib/tmdb.ts` (+`fetchItem`), `src/lib/store.ts` (+`refreshLocalizedLists` action; `setLang`/`toggleLang`/`importData` now call it), `src/app/page.tsx` (+mount-only refresh effect).
+- Switching the interface language now refreshes stored favourites and continue-watching snapshots to the new language on top of the already-localized catalog rows and details modal — so titles, overviews, and artwork follow the switch everywhere. A mount-only refresh also catches up snapshots from a previous language / app version.

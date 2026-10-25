@@ -45,6 +45,16 @@ export default function Home() {
   const setDetailsMedia = useOnyxStore((s) => s.setDetailsMedia);
 
   const t = getT(lang);
+  // On mount, refresh stored list snapshots (favorites + continue-watching)
+  // so titles/overview/artwork left over from a previous language — or a
+  // previous app version before this refresh existed — catch up to the
+  // active interface language. Subsequent switches are handled by the
+  // `setLang`/`toggleLang` actions themselves. No-op when both lists are
+  // empty. Reads from `getState()` so the effect has no deps and runs once.
+  useEffect(() => {
+    const { lang: l, artworkLang: al } = useOnyxStore.getState();
+    void useOnyxStore.getState().refreshLocalizedLists(l, al);
+  }, []);
   const online = useOnline();
   const { reduced } = useMotion();
   const { data, loading, error, reload } = useCatalog(lang, artworkLang, bilingual);
