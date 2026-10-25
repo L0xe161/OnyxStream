@@ -13,6 +13,7 @@ import type {
   CatalogFilters,
   SortOption,
 } from "./types";
+import { isComingSoonMovie, MOVIE_AVAILABILITY_DELAY_DAYS } from "./release-gate";
 
 const TMDB_BASE_URL = "/api/tmdb";
 
@@ -149,11 +150,38 @@ export async function fetchTopRated(
   return items.filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)));
 }
 
+/**
+ * "Coming Soon" row: movies where fewer than `MOVIE_AVAILABILITY_DELAY_DAYS`
+ * full days have passed since their `release_date` — i.e. recently-released
+ * titles still inside their release gate PLUS genuinely upcoming (future-
+ * dated) titles. Implemented via `discover/movie` with a release-date window
+ * (the `/movie/upcoming` endpoint only returns future-dated titles, so it
+ * would miss everything released in the last 29 days).
+ *
+ * The window is computed in UTC so the result matches the verdict of
+ * `isComingSoonMovie()` (which also counts whole UTC days). A final safety
+ * filter through `isComingSoonMovie` guards against any timezone drift.
+ */
 export async function fetchUpcoming(options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {
   const params = buildParams(options);
-  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("movie/upcoming", params);
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const DAY = 86_400_000;
+  // gte = today - (DELAY - 1) days: a movie released exactly this many days
+  // ago is on day (DELAY - 1), which is still < DELAY → gated / coming soon.
+  const since = new Date(todayUtc - (MOVIE_AVAILABILITY_DELAY_DAYS - 1) * DAY);
+  // lte = today + 1 year: include not-yet-released titles up to a year out.
+  const until = new Date(todayUtc + 365 * DAY);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  params.set("primary_release_date.gte", fmt(since));
+  params.set("primary_release_date.lte", fmt(until));
+  params.set("sort_by", "primary_release_date.desc");
+  params.set("include_adult", "false");
+  const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem>>("discover/movie", params);
   if (!data) return [];
-  return withMediaType(data.results || [], "movie");
+  const items = withMediaType(data.results || [], "movie").filter((m) => m.poster_path || m.backdrop_path);
+  // Safety net: drop anything that does not actually pass the 30-day gate.
+  return items.filter((m) => isComingSoonMovie(m));
 }
 
 export async function searchMulti(query: string, options: TMDBRequestOptions = {}): Promise<TMDBMediaItem[]> {

@@ -5,49 +5,17 @@ import { Download, RotateCcw, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { Overlay, OverlayClose } from "./overlay";
 import { Field, Section, Segmented } from "./settings-controls";
-import { SortableList } from "./settings-sortable";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useOnyxStore } from "@/lib/store";
 import { useEffectiveTheme } from "@/hooks/use-effective-theme";
 import { ACCENTS, accentContrast, resolveAccent } from "@/lib/themes";
-import { dirFor, getT, type TranslationKey } from "@/lib/i18n";
-import { TAB_DEFINITIONS } from "@/lib/tabs";
+import { dirFor, getT } from "@/lib/i18n";
 import { buildExport, parseImport } from "@/lib/data-transfer";
 import { cn } from "@/lib/utils";
-import type { HomeRowId, HomeRowSetting, Settings, TabSetting } from "@/lib/settings";
 import type { AccentColor } from "@/lib/themes";
 import type { Language } from "@/lib/types";
-
-const ROW_LABELS: Record<HomeRowId, TranslationKey> = {
-  continue: "continueWatching",
-  trending: "trendingToday",
-  movies: "popularMovies",
-  tv: "popularSeries",
-  anime: "topAnime",
-  cartoons: "classicCartoons",
-  topMovies: "topRatedMovies",
-  topTV: "topRatedTV",
-  upcoming: "upcoming",
-  genres: "genres",
-};
-
-const ORIGINAL_LANGUAGES = ["en", "ar", "ja", "ko", "fr", "es", "tr", "hi", "zh"];
-/** ISO-3166-1 regions surfaced in content preferences; codes TMDB accepts. */
-const PREFERRED_REGIONS = [
-  { code: "US", en: "United States", ar: "الولايات المتحدة" },
-  { code: "GB", en: "United Kingdom", ar: "المملكة المتحدة" },
-  { code: "AE", en: "United Arab Emirates", ar: "الإمارات" },
-  { code: "SA", en: "Saudi Arabia", ar: "السعودية" },
-  { code: "EG", en: "Egypt", ar: "مصر" },
-  { code: "FR", en: "France", ar: "فرنسا" },
-  { code: "DE", en: "Germany", ar: "ألمانيا" },
-  { code: "JP", en: "Japan", ar: "اليابان" },
-  { code: "KR", en: "South Korea", ar: "كوريا الجنوبية" },
-  { code: "IN", en: "India", ar: "الهند" },
-  { code: "TR", en: "Türkiye", ar: "تركيا" },
-  { code: "BR", en: "Brazil", ar: "البرازيل" },
-] as const;
+import type { Settings } from "@/lib/settings";
 
 type Confirm = "history" | "all" | null;
 
@@ -62,7 +30,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
   const setAccent = useOnyxStore((s) => s.setAccent);
   const bilingual = useOnyxStore((s) => s.bilingual);
   const t = getT(lang);
-  const names = new Intl.DisplayNames([lang], { type: "language" });
 
   // Contrast report for the selected accent in the active theme, so the
   // picker tells the user when a colour will be adjusted for legibility.
@@ -158,9 +125,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
             <Field label={t.setDensity} stacked>
               <Segmented label={t.setDensity} value={settings.density} onChange={set("density")} options={[{ value: "compact", label: t.densityCompact }, { value: "comfortable", label: t.densityComfortable }, { value: "spacious", label: t.densitySpacious }]} />
             </Field>
-            <Field label={t.setFont}>
-              <Segmented label={t.setFont} value={settings.fontStyle} onChange={set("fontStyle")} options={[{ value: "editorial", label: t.fontEditorial }, { value: "neutral", label: t.fontNeutral }]} />
-            </Field>
           </Section>
 
           <Section title={t.secLayout}>
@@ -172,12 +136,6 @@ export function SettingsSheet({ lang }: { lang: Language }) {
             </Field>
             <Field label={t.setHero}>
               <Switch checked={settings.heroEnabled} onCheckedChange={set("heroEnabled")} aria-label={t.setHero} />
-            </Field>
-            <Field label={t.setHomeRows} hint={t.setHomeRowsHint} stacked>
-              <SortableList<HomeRowSetting> items={settings.homeRows} labelFor={(id) => t[ROW_LABELS[id]]} labels={{ drag: t.dragHandle, up: t.moveUp, down: t.moveDown }} onChange={set("homeRows")} />
-            </Field>
-            <Field label={t.setTabs} hint={t.setTabsHint} stacked>
-              <SortableList<TabSetting> items={settings.tabs} labelFor={(id) => t[TAB_DEFINITIONS.find((d) => d.id === id)?.labelKey ?? "navAll"]} labels={{ drag: t.dragHandle, up: t.moveUp, down: t.moveDown }} onChange={set("tabs")} />
             </Field>
           </Section>
 
@@ -203,44 +161,14 @@ export function SettingsSheet({ lang }: { lang: Language }) {
           </Section>
 
           <Section title={t.secPlayback}>
-            <Field label={t.setAutoNext}>
-              <Switch checked={settings.autoPlayNext} onCheckedChange={set("autoPlayNext")} aria-label={t.setAutoNext} />
-            </Field>
             <Field label={t.setResume} stacked>
               <Segmented label={t.setResume} value={settings.resume} onChange={set("resume")} options={[{ value: "ask", label: t.resumeAsk }, { value: "always", label: t.resumeAlways }, { value: "never", label: t.resumeNever }]} />
             </Field>
           </Section>
 
           <Section title={t.secContent}>
-            <Field label={t.setHideWatched}>
-              <Switch checked={settings.hideWatched} onCheckedChange={set("hideWatched")} aria-label={t.setHideWatched} />
-            </Field>
             <Field label={t.setHideAdult}>
               <Switch checked={settings.hideAdult} onCheckedChange={set("hideAdult")} aria-label={t.setHideAdult} />
-            </Field>
-            <Field label={t.setOriginalLangs} hint={t.setOriginalLangsHint} stacked>
-              <div className="flex flex-wrap gap-2">
-                {ORIGINAL_LANGUAGES.map((code) => {
-                  const on = settings.originalLanguages.includes(code);
-                  return (
-                    <button key={code} type="button" aria-pressed={on} onClick={() => update({ originalLanguages: on ? settings.originalLanguages.filter((c) => c !== code) : [...settings.originalLanguages, code] })} className={cn("h-9 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-2", on ? "bg-foreground text-background" : "bg-muted text-foreground/80 hover:text-foreground")}>
-                      {names.of(code) ?? code}
-                    </button>
-                  );
-                })}
-              </div>
-            </Field>
-            <Field label={t.setPreferredRegions} hint={t.setPreferredRegionsHint} stacked>
-              <div className="flex flex-wrap gap-2">
-                {PREFERRED_REGIONS.map((r) => {
-                  const on = settings.preferredRegions.includes(r.code);
-                  return (
-                    <button key={r.code} type="button" aria-pressed={on} onClick={() => update({ preferredRegions: on ? settings.preferredRegions.filter((c) => c !== r.code) : [...settings.preferredRegions, r.code] })} className={cn("h-9 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-2", on ? "bg-foreground text-background" : "bg-muted text-foreground/80 hover:text-foreground")}>
-                      {lang === "ar" ? r.ar : r.en}
-                    </button>
-                  );
-                })}
-              </div>
             </Field>
           </Section>
 

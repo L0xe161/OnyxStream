@@ -74,11 +74,16 @@ export const DEFAULT_SETTINGS: Settings = {
   heroEnabled: true,
   motion: "system",
   heroAutoplay: true,
-  heroIntervalMs: 8000,
+  // Slider duration: 6 seconds per slide (per spec).
+  heroIntervalMs: 6000,
   autoPlayNext: false,
   resume: "ask",
-  hideWatched: false,
-  hideAdult: true,
+  // Force-enabled in the background: finished titles are always hidden.
+  // The toggle was removed from the Settings UI; this value is also forced
+  // back to true in `sanitizePersisted` so existing users are migrated.
+  hideWatched: true,
+  // Adult content is shown by default; the toggle stays in Settings.
+  hideAdult: false,
   originalLanguages: [],
   preferredRegions: [],
 };

@@ -17,7 +17,7 @@ import { STORE_KEY } from "./storage-keys";
 import { DEFAULT_HOME_ROWS, DEFAULT_SETTINGS, DEFAULT_TABS, reconcileList, type Settings } from "./settings";
 
 /** Bump when the persisted shape changes and extend `migrate` below. */
-export const STORE_VERSION = 6;
+export const STORE_VERSION = 7;
 const MAX_CONTINUE = 20;
 
 export interface OnyxState {
@@ -177,6 +177,10 @@ export function sanitizePersisted(raw: Partial<PersistedState> | undefined, base
     ...stored,
     homeRows: reconcileList(stored.homeRows, DEFAULT_HOME_ROWS),
     tabs: reconcileList(stored.tabs, DEFAULT_TABS),
+    // "Hide completed items" is force-enabled in the background and its toggle
+    // was removed from the Settings UI — ensure it is always on regardless of
+    // what was persisted before, so finished titles never resurface.
+    hideWatched: true,
   };
   return out;
 }
