@@ -154,3 +154,27 @@ Stage Summary:
 - New: `src/hooks/use-drag-scroll.ts`. Modified: `src/app/globals.css` (.drag-scroll CSS), `src/components/onyx/category-row.tsx`, `media-modal.tsx`, `search-overlay.tsx`, `continue-watching.tsx` (all 5 scrollers now drag-scrollable), `src/app/api/tmdb/[...path]/route.ts` (translations allow-list), `src/lib/types.ts` (+TMDBTranslation types + translations field), `src/lib/tmdb.ts` (fetchDetails + applyTranslationFallback).
 - Dragging any horizontal carousel (Cast, More Like This, home rows, continue-watching, search people) now scrolls smoothly with the mouse and never highlights posters/photos/titles; works in both LTR and RTL; clicks still fire after a tap, suppressed only after a real drag.
 - Titles/overviews missing an Arabic translation now fall back to the English translation automatically (one API call via `append_to_response=translations`) — no more original-language titles and no more "لا يوجد ملخص متوفر بهذه اللغة حالياً" placeholder in the details modal.
+
+---
+Task ID: 8
+Agent: Z.ai Code (main orchestrator)
+Task: Fix posters not opening on tap + Continue-Watching ✕ button not removing items (both broken by the drag-scroll hook)
+
+Work Log:
+- Root cause: the `useDragScroll` hook (added in Task 7) called `el.setPointerCapture(pointerId)` inside `onPointerDown` on EVERY press. Capturing the pointer on every mousedown intercepted the browser's `click`-event synthesis (mousedown→mouseup→click) for any element inside a drag-scroll container — so taps on posters (category-row cards) and the ✕ button on Continue-Watching items never fired their `onClick`. Reproduced with agent-browser: a clean `element.click()` (JS) opened the details modal, but a real `agent-browser click` on the same card did not (`clickFired: false`). The 4px drag-threshold from Task 7 was also too low — ordinary click jitter (5-10px) would set `s.moved = true` and add the click-suppressor, swallowing legit clicks even without the capture issue.
+- `src/hooks/use-drag-scroll.ts` — three fixes:
+  1. Raised `DRAG_THRESHOLD` from 4 → 10px (well above typical mouse/finger click jitter, below a real drag).
+  2. `onPointerMove` now returns early (no scroll, no `moved`) until movement clearly exceeds the threshold — so a click with a few pixels of wobble neither scrolls the list a hair nor has its click suppressed.
+  3. Moved `el.setPointerCapture()` OUT of `onPointerDown` and into `onPointerMove` (only when the press becomes a real drag). Capture is now never taken on an ordinary tap, so the browser's click synthesis runs uninterrupted. `releasePointerCapture` in `endDrag` is a harmless no-op when no capture was taken.
+- Also moved `el.dataset.dragging = "true"` from `onPointerDown` to `onPointerMove` (only on real drag), so an ordinary click no longer flashes the `grabbing` cursor / `user-select: none` state for a frame.
+- No other files touched — the hook is the single source of both bugs; all 5 scrollers (category-row, media-modal cast + recs, search-overlay people, continue-watching) inherit the fix.
+- Verification (agent-browser 1440×900):
+  * Card click: `agent-browser click` on "Details: The Cycle" → `dialogOpen: true`, URL `?title=movie-1290418` (was `false`/stuck on `/` before the fix).
+  * Continue-Watching ✕: played Inception briefly to seed a Continue-Watching item, then `agent-browser click` on "Remove from Continue Watching: Inception" → `continueCount: 0` (removed from store), `toastVisible: true` (the "Removed from Continue Watching" + Undo toast showed). Was a no-op before the fix.
+  * Real drag still works: 300px drag on the trending row → `scrollLeft: 0→300` during the drag, `dragging: "true"`, after release `scrollLeftAfter: 208` (snap re-engaged) and `dialogOpen: false` (the drag correctly did NOT open a card — click suppression still works for real drags).
+  * 6px jitter no longer enters drag mode: `data-dragging` stays unset (confirmed).
+  * `bun run lint` exit 0, `bunx tsc --noEmit` 0 errors. Dev log clean (no errors/warnings/503s).
+
+Stage Summary:
+- Modified: `src/hooks/use-drag-scroll.ts` only.
+- Posters now open on tap and Continue-Watching ✕ now removes items — both fixed by not capturing the pointer on every press and by raising the drag threshold above click jitter. Real drag-to-scroll + click-after-drag suppression are preserved.

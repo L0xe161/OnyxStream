@@ -2,8 +2,12 @@
 
 import { useCallback, useRef, type RefObject } from "react";
 
-/** Pixels of pointer travel before a press counts as a drag (not a click). */
-const DRAG_THRESHOLD = 4;
+/** Pixels of pointer travel before a press counts as a drag (not a click).
+ * Kept well above typical mouse/finger jitter so an ordinary click — even one
+ * with a few pixels of wobble — never gets mistaken for a drag and never has
+ * its `click` event suppressed. Below this, the press is treated as a click
+ * and the list is not scrolled at all. */
+const DRAG_THRESHOLD = 10;
 
 /**
  * Adds mouse-driven click-and-drag horizontal scrolling to a horizontal
@@ -54,10 +58,11 @@ export function useDragScroll<T extends HTMLElement>(elRef: RefObject<T | null>)
       // feeling natural in both directions.
       rtl: getComputedStyle(el).direction === "rtl",
     };
-    // Capture the pointer so we keep receiving move/up events even if the
-    // cursor leaves the scroller bounds mid-drag.
-    el.setPointerCapture?.(e.pointerId);
-    el.dataset.dragging = "true";
+    // NOTE: we deliberately do NOT call `setPointerCapture` here. Capturing the
+    // pointer on every press would intercept the browser's `click` synthesis
+    // (mousedown→mouseup→click) for cards / the Continue-Watching ✕ button
+    // inside the scroller, so taps would stop opening details. Capture is taken
+    // only once the press becomes a real drag, in `onPointerMove`.
   }, [elRef]);
 
   const onPointerMove = useCallback((e: React.PointerEvent<T>) => {
@@ -66,7 +71,19 @@ export function useDragScroll<T extends HTMLElement>(elRef: RefObject<T | null>)
     const el = elRef.current;
     if (!el) return;
     const delta = e.clientX - s.startX;
-    if (!s.moved && Math.abs(delta) > DRAG_THRESHOLD) s.moved = true;
+    // Don't scroll (and don't mark as a drag) until the pointer has clearly
+    // travelled past click jitter. This keeps an ordinary click — even one
+    // with a few pixels of wobble — from both scrolling the list a hair AND
+    // having its `click` event suppressed (which would stop cards / the
+    // Continue-Watching ✕ button from opening).
+    if (!s.moved) {
+      if (Math.abs(delta) <= DRAG_THRESHOLD) return;
+      s.moved = true;
+      el.dataset.dragging = "true";
+      // Only capture the pointer once this is clearly a drag (not a click), so
+      // ordinary taps keep their normal `click` synthesis.
+      el.setPointerCapture?.(e.pointerId);
+    }
     // In LTR, dragging left (negative delta) scrolls toward the end
     // (scrollLeft increases). In RTL, scrollLeft decreases (goes negative)
     // toward the end, so the delta is applied with the opposite sign.
