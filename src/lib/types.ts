@@ -9,8 +9,8 @@ export type CategoryTab =
   | "catalog"
   | "favorites";
 
-export type Language = "en" | "ar";
-export type ArtworkLanguage = "en" | "ar";
+export type Language = "en" | "ar" | "fa";
+export type ArtworkLanguage = "en" | "ar" | "fa";
 
 export interface TMDBMediaItem {
   id: number;
@@ -65,10 +65,13 @@ export interface TMDBMediaItem {
   // Bilingual title fields (filled when bilingual mode is on)
   title_en?: string;
   title_ar?: string;
+  title_fa?: string;
   name_en?: string;
   name_ar?: string;
+  name_fa?: string;
   overview_en?: string;
   overview_ar?: string;
+  overview_fa?: string;
 }
 
 export interface TMDBCastMember {

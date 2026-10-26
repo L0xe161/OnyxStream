@@ -17,6 +17,7 @@ export interface AccentDef {
   id: AccentColor;
   label: string;
   labelAr: string;
+  labelFa: string;
   /** main accent (primary) */
   color: string;
   /** darker hover (accent) */
@@ -26,21 +27,21 @@ export interface AccentDef {
 }
 
 export const ACCENTS: AccentDef[] = [
-  { id: "white", label: "White", labelAr: "أبيض", color: "#ffffff", hover: "#d4d4d4", tint: "rgba(255,255,255,0.16)" },
-  { id: "cyan", label: "Cyan", labelAr: "سماوي", color: "#06b6d4", hover: "#0e7490", tint: "rgba(6,182,212,0.15)" },
-  { id: "teal", label: "Teal", labelAr: "فيروزي", color: "#14b8a6", hover: "#0f766e", tint: "rgba(20,184,166,0.15)" },
-  { id: "violet", label: "Violet", labelAr: "بنفسجي", color: "#8b5cf6", hover: "#6d28d9", tint: "rgba(139,92,246,0.15)" },
-  { id: "rose", label: "Rose", labelAr: "وردي", color: "#f43f5e", hover: "#be123c", tint: "rgba(244,63,94,0.15)" },
-  { id: "amber", label: "Amber", labelAr: "كهرماني", color: "#f59e0b", hover: "#b45309", tint: "rgba(245,158,11,0.15)" },
-  { id: "emerald", label: "Emerald", labelAr: "زمردي", color: "#10b981", hover: "#047857", tint: "rgba(16,185,129,0.15)" },
-  { id: "blue", label: "Blue", labelAr: "أزرق", color: "#3b82f6", hover: "#1d4ed8", tint: "rgba(59,130,246,0.15)" },
-  { id: "orange", label: "Orange", labelAr: "برتقالي", color: "#fb923c", hover: "#c2410c", tint: "rgba(251,146,60,0.15)" },
+  { id: "white", label: "White", labelAr: "أبيض", labelFa: "سفید", color: "#ffffff", hover: "#d4d4d4", tint: "rgba(255,255,255,0.16)" },
+  { id: "cyan", label: "Cyan", labelAr: "سماوي", labelFa: "فیروزه‌ای", color: "#06b6d4", hover: "#0e7490", tint: "rgba(6,182,212,0.15)" },
+  { id: "teal", label: "Teal", labelAr: "فيروزي", labelFa: "سبز مایل به آبی", color: "#14b8a6", hover: "#0f766e", tint: "rgba(20,184,166,0.15)" },
+  { id: "violet", label: "Violet", labelAr: "بنفسجي", labelFa: "بنفش", color: "#8b5cf6", hover: "#6d28d9", tint: "rgba(139,92,246,0.15)" },
+  { id: "rose", label: "Rose", labelAr: "وردي", labelFa: "رز", color: "#f43f5e", hover: "#be123c", tint: "rgba(244,63,94,0.15)" },
+  { id: "amber", label: "Amber", labelAr: "كهرماني", labelFa: "کهربایی", color: "#f59e0b", hover: "#b45309", tint: "rgba(245,158,11,0.15)" },
+  { id: "emerald", label: "Emerald", labelAr: "زمردي", labelFa: "سبز زمردی", color: "#10b981", hover: "#047857", tint: "rgba(16,185,129,0.15)" },
+  { id: "blue", label: "Blue", labelAr: "أزرق", labelFa: "آبی", color: "#3b82f6", hover: "#1d4ed8", tint: "rgba(59,130,246,0.15)" },
+  { id: "orange", label: "Orange", labelAr: "برتقالي", labelFa: "نارنجی", color: "#fb923c", hover: "#c2410c", tint: "rgba(251,146,60,0.15)" },
 ];
 
-export const THEME_MODES: { id: ThemeMode; label: string; labelAr: string; icon: string }[] = [
-  { id: "dark", label: "Dark", labelAr: "داكن", icon: "moon" },
-  { id: "light", label: "Light", labelAr: "فاتح", icon: "sun" },
-  { id: "frosted", label: "Frosted", labelAr: "زجاجي", icon: "sparkles" },
+export const THEME_MODES: { id: ThemeMode; label: string; labelAr: string; labelFa: string; icon: string }[] = [
+  { id: "dark", label: "Dark", labelAr: "داكن", labelFa: "تیره", icon: "moon" },
+  { id: "light", label: "Light", labelAr: "فاتح", labelFa: "روشن", icon: "sun" },
+  { id: "frosted", label: "Frosted", labelAr: "زجاجي", labelFa: "شیشه‌ای", icon: "sparkles" },
 ];
 
 export function getAccent(id: AccentColor): AccentDef {

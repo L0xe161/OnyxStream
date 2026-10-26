@@ -25,11 +25,11 @@ const source = `(function(){try{
 var raw=localStorage.getItem(${JSON.stringify(STORE_KEY)});
 var s=(raw&&JSON.parse(raw).state)||{};var st=s.settings||{};
 var d=document.documentElement;
-var lang=s.lang==="ar"?"ar":"en";
+var lang=s.lang==="ar"?"ar":(s.lang==="fa"?"fa":"en");
 var theme=s.theme;
 if(st.followSystemTheme)theme=matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";
 if(theme!=="light"&&theme!=="frosted")theme="dark";
-d.lang=lang;d.dir=lang==="ar"?"rtl":"ltr";
+d.lang=lang;d.dir=(lang==="ar"||lang==="fa")?"rtl":"ltr";
 d.classList.remove("theme-dark","theme-light","theme-frosted");d.classList.add("theme-"+theme);
 d.dataset.corners=st.corners||"soft";d.dataset.density=st.density||"comfortable";
 d.dataset.poster=st.posterSize||"md";d.dataset.motion=st.motion||"system";d.dataset.font=st.fontStyle||"editorial";

@@ -49,6 +49,11 @@ function buildParams(options: TMDBRequestOptions = {}): URLSearchParams {
     // Arabic-localized metadata + Arabic-included artwork per spec.
     params.set("language", "ar-SA");
     params.set("include_image_language", "ar,en,null");
+  } else if (artworkLang === "fa" || uiLang === "fa") {
+    // Persian-localized metadata + Persian-included artwork (Persian
+    // posters are rarer on TMDB, so English/null stay as a fallback).
+    params.set("language", "fa-IR");
+    params.set("include_image_language", "fa,en,null");
   } else {
     params.set("language", "en-US");
     params.set("include_image_language", "en,null");
@@ -424,7 +429,7 @@ interface MultiSearchBucket {
 }
 
 /** Raw multi search in one specific TMDB language (no artwork mixing). */
-async function searchMultiInLang(query: string, language: "en-US" | "ar-SA"): Promise<MultiSearchBucket> {
+async function searchMultiInLang(query: string, language: "en-US" | "ar-SA" | "fa-IR"): Promise<MultiSearchBucket> {
   const params = new URLSearchParams({ language, query });
   const data = await tmdbFetch<TMDBListResponse<TMDBMediaItem | TMDBSearchPersonResult>>(
     "search/multi",
@@ -457,9 +462,11 @@ export async function searchMultiWithPeople(
 
   // Search BOTH languages so an Arabic name finds an English-listed title and
   // vice versa, then merge the two result sets (primary language first).
-  const primary: "en-US" | "ar-SA" =
-    options.uiLang === "ar" || options.artworkLang === "ar" ? "ar-SA" : "en-US";
-  const secondary: "en-US" | "ar-SA" = primary === "ar-SA" ? "en-US" : "ar-SA";
+  const primary: "en-US" | "ar-SA" | "fa-IR" =
+    options.uiLang === "ar" || options.artworkLang === "ar" ? "ar-SA"
+    : options.uiLang === "fa" || options.artworkLang === "fa" ? "fa-IR"
+    : "en-US";
+  const secondary: "en-US" | "ar-SA" | "fa-IR" = primary === "en-US" ? "ar-SA" : "en-US";
 
   // Space-insensitive: "black list" should match "The Blacklist". We also fire
   // the query with all spaces removed, so titles the provider stored as one
@@ -595,30 +602,31 @@ export async function fetchPersonCredits(
 }
 
 /** Languages offered in the catalog filter, with localized labels. */
-export const ORIGINAL_LANGUAGES: { code: string; label: string; labelAr: string }[] = [
-  { code: "en", label: "English", labelAr: "الإنجليزية" },
-  { code: "ar", label: "Arabic", labelAr: "العربية" },
-  { code: "ja", label: "Japanese", labelAr: "اليابانية" },
-  { code: "ko", label: "Korean", labelAr: "الكورية" },
-  { code: "fr", label: "French", labelAr: "الفرنسية" },
-  { code: "es", label: "Spanish", labelAr: "الإسبانية" },
-  { code: "de", label: "German", labelAr: "الألمانية" },
-  { code: "tr", label: "Turkish", labelAr: "التركية" },
-  { code: "hi", label: "Hindi", labelAr: "الهندية" },
-  { code: "zh", label: "Chinese", labelAr: "الصينية" },
-  { code: "it", label: "Italian", labelAr: "الإيطالية" },
-  { code: "ru", label: "Russian", labelAr: "الروسية" },
+export const ORIGINAL_LANGUAGES: { code: string; label: string; labelAr: string; labelFa: string }[] = [
+  { code: "en", label: "English", labelAr: "الإنجليزية", labelFa: "انگلیسی" },
+  { code: "ar", label: "Arabic", labelAr: "العربية", labelFa: "عربی" },
+  { code: "fa", label: "Persian", labelAr: "الفارسية", labelFa: "فارسی" },
+  { code: "ja", label: "Japanese", labelAr: "اليابانية", labelFa: "ژاپنی" },
+  { code: "ko", label: "Korean", labelAr: "الكورية", labelFa: "کره‌ای" },
+  { code: "fr", label: "French", labelAr: "الفرنسية", labelFa: "فرانسوی" },
+  { code: "es", label: "Spanish", labelAr: "الإسبانية", labelFa: "اسپانیایی" },
+  { code: "de", label: "German", labelAr: "الألمانية", labelFa: "آلمانی" },
+  { code: "tr", label: "Turkish", labelAr: "التركية", labelFa: "ترکی" },
+  { code: "hi", label: "Hindi", labelAr: "الهندية", labelFa: "هندی" },
+  { code: "zh", label: "Chinese", labelAr: "الصينية", labelFa: "چینی" },
+  { code: "it", label: "Italian", labelAr: "الإيطالية", labelFa: "ایتالیایی" },
+  { code: "ru", label: "Russian", labelAr: "الروسية", labelFa: "روسی" },
 ];
 
-export const SORT_OPTIONS: { value: SortOption; label: string; labelAr: string }[] = [
-  { value: "popularity.desc", label: "Popularity ↓", labelAr: "الأكثر رواجاً" },
-  { value: "popularity.asc", label: "Popularity ↑", labelAr: "الأقل رواجاً" },
-  { value: "vote_average.desc", label: "Rating ↓", labelAr: "الأعلى تقييماً" },
-  { value: "vote_average.asc", label: "Rating ↑", labelAr: "الأقل تقييماً" },
-  { value: "primary_release_date.desc", label: "Newest", labelAr: "الأحدث" },
-  { value: "primary_release_date.asc", label: "Oldest", labelAr: "الأقدم" },
-  { value: "title.asc", label: "Title A–Z", labelAr: "الاسم أ–ي" },
-  { value: "title.desc", label: "Title Z–A", labelAr: "الاسم ي–أ" },
+export const SORT_OPTIONS: { value: SortOption; label: string; labelAr: string; labelFa: string }[] = [
+  { value: "popularity.desc", label: "Popularity ↓", labelAr: "الأكثر رواجاً", labelFa: "محبوبیت ↓" },
+  { value: "popularity.asc", label: "Popularity ↑", labelAr: "الأقل رواجاً", labelFa: "محبوبیت ↑" },
+  { value: "vote_average.desc", label: "Rating ↓", labelAr: "الأعلى تقييماً", labelFa: "امتیاز ↓" },
+  { value: "vote_average.asc", label: "Rating ↑", labelAr: "الأقل تقييماً", labelFa: "امتیاز ↑" },
+  { value: "primary_release_date.desc", label: "Newest", labelAr: "الأحدث", labelFa: "جدیدترین" },
+  { value: "primary_release_date.asc", label: "Oldest", labelAr: "الأقدم", labelFa: "قدیمی‌ترین" },
+  { value: "title.asc", label: "Title A–Z", labelAr: "الاسم أ–ي", labelFa: "عنوان آ–ی" },
+  { value: "title.desc", label: "Title Z–A", labelAr: "الاسم ي–أ", labelFa: "عنوان ی–آ" },
 ];
 
 /** Get a localized runtime string. */

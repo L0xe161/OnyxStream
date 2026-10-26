@@ -139,7 +139,7 @@ export function sanitizePersisted(raw: Partial<PersistedState> | undefined, base
   if (!isRecord(raw)) return {};
   const out: Partial<PersistedState> = {};
 
-  if (raw.lang === "en" || raw.lang === "ar") out.lang = raw.lang;
+  if (raw.lang === "en" || raw.lang === "ar" || raw.lang === "fa") out.lang = raw.lang;
   // Artwork language is no longer a separate preference: covers always follow
   // the interface language (Arabic UI -> Arabic posters, English UI -> English posters).
   out.artworkLang = out.lang ?? "en";
@@ -207,13 +207,15 @@ export const useOnyxStore = create<OnyxState>()(
         void get().refreshLocalizedLists(lang, lang);
       },
       toggleLang: () => {
-        const newLang = get().lang === "en" ? "ar" : "en";
-        set({ lang: newLang, artworkLang: newLang });
-        void get().refreshLocalizedLists(newLang, newLang);
+        // Cycle EN → AR → FA → EN so a single toggle button walks all three
+        // languages; the button's label (`t.langToggle`) shows the next one.
+        const next = get().lang === "en" ? "ar" : get().lang === "ar" ? "fa" : "en";
+        set({ lang: next, artworkLang: next });
+        void get().refreshLocalizedLists(next, next);
       },
       setArtworkLang: (artworkLang) => set({ artworkLang }),
       toggleArtworkLang: () =>
-        set((s) => ({ artworkLang: s.artworkLang === "en" ? "ar" : "en" })),
+        set((s) => ({ artworkLang: s.artworkLang === "en" ? "ar" : s.artworkLang === "ar" ? "fa" : "en" })),
       setBilingual: (bilingual) => set({ bilingual }),
       toggleBilingual: () => set((s) => ({ bilingual: !s.bilingual })),
 
