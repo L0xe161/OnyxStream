@@ -269,3 +269,27 @@ Work Log:
 Stage Summary:
 - Modified: `src/lib/tmdb.ts` only (+`GENRE_NAMES_FA` + `localizeGenre` in `fetchGenres`; rewrote `applyTranslationFallback(item, requestedLang)` with translations-array-as-source-of-truth + tagline-hide-in-non-English-modes; `fetchDetails` passes the requested lang).
 - Persian genre chips now show real Persian names (local map, since TMDB has no fa genre catalogue), and movie taglines no longer leak English into the Persian UI — a tagline shows only when a Persian (or Arabic) translation exists, and is hidden otherwise (English mode keeps the English tagline). Arabic and English behaviour unchanged.
+
+---
+Task ID: 13
+Agent: Z.ai Code (main orchestrator)
+Task: Re-fix the Persian tagline issue — the user wanted taglines to APPEAR in Persian, not be hidden (my Task 12 hide-on-no-translation was wrong). Now translates the English tagline to Persian/Arabic on the fly via the LLM when TMDB has no localized tagline.
+
+Work Log:
+- User feedback: Task 12 HIDDEN the tagline when no Persian/Arabic tagline existed on TMDB. The user wanted it shown IN PERSIAN, not removed. Since TMDB has no Persian tagline for most movies (fa tagline is empty in the translations table), the only way to show a Persian tagline is to translate the English one.
+- `src/lib/tmdb.ts` — reverted the Task 12 tagline-clearing in `applyTranslationFallback`. The tagline branch now only sets `item.tagline` to the requested language's tagline from the translations array WHEN it exists; otherwise it leaves `item.tagline` as TMDB returned it (empty for fa-IR when no Persian tagline). The modal's new `useLocalizedTagline` hook then reads the English tagline from `item.translations` and translates it.
+- `src/lib/server/translate.ts` (new) — a server-side LLM translation helper using `z-ai-web-dev-sdk`. `translateText(text, to)` asks the LLM to translate a short string (movie tagline) to the target language, with a system prompt that instructs it to keep proper nouns/film titles intact, match the original tone, and output ONLY the translated sentence (no quotes/preamble). Reuses a single shared `ZAI.create()` instance. Returns the original text on any failure (graceful fallback). No-ops for `to === "en"` or missing/over-long input.
+- `src/app/api/translate/route.ts` (new) — `GET /api/translate?text=…&to=fa|ar|en` → `{translated, source, to}`. Validates the input (non-empty, ≤1000 chars, supported target), calls `translateText`, and caches the response for 24h (`Cache-Control: public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800`) so repeated views of the same movie don't re-translate.
+- `src/hooks/use-translated-text.ts` (new) — `useTranslatedText(text, to)` (TanStack Query, `staleTime: Infinity` so each (text, lang) pair is translated once per session) + `useLocalizedTagline(item, uiLang)`. The hook returns `undefined` WHILE the LLM call is in flight (and on failure) so the tagline element is hidden rather than flashing English. `useLocalizedTagline`: (1) if the requested language's translation (from `item.translations`) has a tagline → use it (TMDB's localized version, no LLM); (2) else if UI is English → show the English tagline; (3) else → machine-translate the English tagline via the LLM; (4) else → undefined.
+- `src/components/onyx/media-modal.tsx` — `ModalBody` now calls `const tagline = useLocalizedTagline(item, lang)` and renders `{tagline && <p …>“{tagline}”</p>}` instead of `{item.tagline && …}`. So a movie with a TMDB Persian/Arabic tagline shows that; a movie without one shows an LLM-translated tagline in the UI language; English mode shows the English tagline as-is.
+- Verification (agent-browser 1440×900):
+  * Project Hail Mary (movie-687163, NO Persian TMDB tagline) in fa: title "پروژه هیل مری", tagline "به ماریای مقدس ایمان داشته باش." (LLM-translated from "Believe in the Hail Mary."). `GET /api/translate?text=Believe%20in%20the%20Hail%20Mary.&to=fa 200 in 1087ms`. Was hidden in Task 12; now appears in Persian.
+  * Inception (movie-27205, HAS a Persian TMDB tagline) in fa: tagline "ذهن شما صنه جرم است." (TMDB's localized version — NOT re-translated, no LLM call). Confirms the LLM is only used when there's no localized tagline.
+  * Project Hail Mary in ar: tagline "رجل واحد. مهمة واحدة. فرصة أخيرة." — this came from TMDB (it HAS an Arabic tagline), no LLM call.
+  * Project Hail Mary in en: tagline "Believe in the Hail Mary." (English, as-is).
+  * `bun run lint` exit 0, `bunx tsc --noEmit` 0 errors. Dev log clean (translate API 200s, no errors/warnings).
+
+Stage Summary:
+- New: `src/lib/server/translate.ts`, `src/app/api/translate/route.ts`, `src/hooks/use-translated-text.ts`.
+- Modified: `src/lib/tmdb.ts` (reverted the tagline clearing — leaves `item.tagline` for the modal to translate), `src/components/onyx/media-modal.tsx` (uses `useLocalizedTagline`).
+- Taglines now appear in the selected language: TMDB's localized tagline when it exists (Persian/Arabic/English), otherwise an on-the-fly LLM translation of the English tagline (cached per (text, lang) pair). No more hidden taglines, no more English leaking into a Persian/Arabic UI.

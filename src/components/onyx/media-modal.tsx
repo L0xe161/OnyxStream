@@ -10,6 +10,7 @@ import { useDetails, useSeason } from "@/hooks/use-tmdb";
 import { useShowStructure } from "@/hooks/use-show-structure";
 import { useArtworkAccent } from "@/hooks/use-artwork-accent";
 import { useDragScroll } from "@/hooks/use-drag-scroll";
+import { useLocalizedTagline } from "@/hooks/use-translated-text";
 import { useOnyxStore } from "@/lib/store";
 import { dirFor, getT } from "@/lib/i18n";
 import { toggleFavoriteWithUndo } from "@/lib/actions";
@@ -60,6 +61,10 @@ function ModalBody({ media, onClose, onPlay, lang, artworkLang, bilingual = fals
   const item = details ?? media;
   const isFavorite = useOnyxStore((s) => s.favorites.some((f) => f.id === item.id));
   const accent = useArtworkAccent(item.backdrop_path || item.poster_path);
+  // Resolve the tagline in the active UI language: TMDB's localized tagline if
+  // it exists, otherwise an on-the-fly LLM translation of the English tagline
+  // so it appears in Persian/Arabic instead of being hidden or shown in English.
+  const tagline = useLocalizedTagline(item, lang);
 
   const title = item.title || item.name || t.moreInfo;
   const other = bilingual ? getBilingualOtherTitle(item, title) : null;
@@ -123,7 +128,7 @@ function ModalBody({ media, onClose, onPlay, lang, artworkLang, bilingual = fals
 
           <div className="grid gap-8 md:grid-cols-[1fr_auto]">
             <div className="max-w-2xl space-y-4">
-              {item.tagline && <p className="font-display text-title italic text-muted-foreground" dir="auto">“{item.tagline}”</p>}
+              {tagline && <p className="font-display text-title italic text-muted-foreground" dir="auto">“{tagline}”</p>}
               <p className="text-body" dir="auto">{item.overview || t.noOverview}</p>
               {creditPeople.length > 0 && (
                 <p className="text-muted-foreground">

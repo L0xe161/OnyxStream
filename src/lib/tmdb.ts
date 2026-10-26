@@ -259,19 +259,15 @@ function applyTranslationFallback(item: TMDBMediaItem, requestedLang: Language):
     item.overview = en.data.overview!;
   }
 
-  // Tagline: show the localized tagline if it exists. In non-English modes,
-  // HIDE the tagline when there's no localized version (an English marketing
-  // slogan reads as a bug in an RTL UI). In English mode, fall back to the
-  // English tagline so it still shows.
+  // Tagline: prefer the requested language's tagline from the translations
+  // array. When no localized tagline exists, leave `item.tagline` as-is — the
+  // media modal's `useLocalizedTagline` hook reads the English tagline from
+  // `item.translations` and machine-translates it to the UI language on the
+  // fly, so the tagline appears in Persian/Arabic instead of being hidden or
+  // shown in English.
   const requestedTagline = requested?.data.tagline?.trim();
   if (requestedTagline) {
     item.tagline = requested!.data.tagline!;
-  } else if (requestedLang === "en" && en?.data.tagline?.trim()) {
-    item.tagline = en.data.tagline!;
-  } else if (requestedLang !== "en") {
-    // No localized tagline in a non-English mode → clear it so the modal
-    // hides the tagline element entirely (no English fallback).
-    item.tagline = "";
   }
 
   // Movie title: prefer the requested translation's title; fall back to
