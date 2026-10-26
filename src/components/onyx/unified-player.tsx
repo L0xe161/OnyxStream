@@ -135,7 +135,7 @@ function StreamTheater({ media, lang }: { media: TMDBMediaItem; lang: Language }
             // window, open popups, run modals or reach our origin. Resizing
             // and fullscreen are handled exclusively by the embed's built-in
             // control bar, so we do not add our own.
-            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
             allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *"
             allowFullScreen
             referrerPolicy="origin"
