@@ -17,6 +17,7 @@ import { DEFAULT_CATALOG, type CatalogState } from "./url-state";
 import { STORE_KEY } from "./storage-keys";
 import { DEFAULT_HOME_ROWS, DEFAULT_SETTINGS, DEFAULT_TABS, reconcileList, type Settings } from "./settings";
 import { fetchItem } from "./tmdb";
+import { nextLanguage } from "./i18n";
 
 /** Bump when the persisted shape changes and extend `migrate` below. */
 export const STORE_VERSION = 7;
@@ -208,8 +209,9 @@ export const useOnyxStore = create<OnyxState>()(
       },
       toggleLang: () => {
         // Cycle EN → AR → FA → EN so a single toggle button walks all three
-        // languages; the button's label (`t.langToggle`) shows the next one.
-        const next = get().lang === "en" ? "ar" : get().lang === "ar" ? "fa" : "en";
+        // languages. The header button's label shows the next language's
+        // native name (see `languageNativeLabel`/`nextLanguage` in i18n).
+        const next = nextLanguage(get().lang);
         set({ lang: next, artworkLang: next });
         void get().refreshLocalizedLists(next, next);
       },

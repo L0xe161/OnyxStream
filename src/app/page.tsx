@@ -31,7 +31,7 @@ import { startPlayback } from "@/lib/actions";
 import { applyContentFilters, watchedIds } from "@/lib/content-filters";
 import { isDiscoverTab, ROW_DEFINITIONS, TAB_VIEWS, type DiscoverTab } from "@/lib/home-rows";
 import { rise, stagger } from "@/lib/motion";
-import type { CatalogData, TMDBMediaItem, TMDBSearchPersonResult } from "@/lib/types";
+import type { CatalogData, Language, TMDBMediaItem, TMDBSearchPersonResult } from "@/lib/types";
 
 export default function Home() {
   useKeyboardShortcuts();
@@ -151,7 +151,7 @@ export default function Home() {
 }
 
 interface ViewProps {
-  lang: "en" | "ar";
+  lang: Language;
   bilingual: boolean;
   onPlay: (media: TMDBMediaItem, season?: number, episode?: number, serverId?: string) => void;
   onSelectDetails: (media: TMDBMediaItem) => void;

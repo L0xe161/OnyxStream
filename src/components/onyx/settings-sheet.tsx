@@ -10,7 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useOnyxStore } from "@/lib/store";
 import { useEffectiveTheme } from "@/hooks/use-effective-theme";
 import { ACCENTS, accentContrast, resolveAccent } from "@/lib/themes";
-import { dirFor, getT } from "@/lib/i18n";
+import { dirFor, getT, LANGUAGES } from "@/lib/i18n";
 import { buildExport, parseImport } from "@/lib/data-transfer";
 import { cn } from "@/lib/utils";
 import type { AccentColor } from "@/lib/themes";
@@ -86,7 +86,7 @@ export function SettingsSheet({ lang }: { lang: Language }) {
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-8">
           <Section title={t.secLanguage}>
             <Field label={t.setInterfaceLang} hint={t.setInterfaceLangHint}>
-              <Segmented label={t.setInterfaceLang} value={lang} onChange={(v) => v !== lang && store().toggleLang()} options={[{ value: "en", label: "English" }, { value: "ar", label: "العربية" }]} />
+              <Segmented label={t.setInterfaceLang} value={lang} onChange={(v) => v !== lang && store().setLang(v)} options={LANGUAGES.map((l) => ({ value: l.id, label: l.label }))} />
             </Field>
             <Field label={t.setBilingual} hint={t.setBilingualHint}>
               <Switch checked={bilingual} onCheckedChange={(v) => store().setBilingual(v)} aria-label={t.setBilingual} />

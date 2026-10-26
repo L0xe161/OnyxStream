@@ -3,7 +3,7 @@
 import { Languages, MoreHorizontal, Search, SlidersHorizontal } from "lucide-react";
 import { motion } from "framer-motion";
 import { useOnyxStore } from "@/lib/store";
-import { getT } from "@/lib/i18n";
+import { getT, languageNativeLabel, nextLanguage } from "@/lib/i18n";
 import { useNavTabs } from "@/hooks/use-nav-tabs";
 import { transition } from "@/lib/motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -98,7 +98,7 @@ export function Header() {
             </button>
             <button type="button" onClick={toggleLang} className={cn(barButton, "max-sm:hidden shrink-0")} aria-label={t.langToggleLabel}>
               <Languages className="size-5" aria-hidden />
-              <span>{t.langToggle}</span>
+              <span>{languageNativeLabel(nextLanguage(lang))}</span>
             </button>
             <button type="button" onClick={() => setSettingsOpen(true)} className={cn(barButton, "shrink-0")} aria-label={t.openSettings} title={t.openSettings}>
               <SlidersHorizontal className="size-5" aria-hidden />

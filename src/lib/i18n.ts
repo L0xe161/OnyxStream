@@ -892,3 +892,26 @@ export function dirFor(lang: Language): "ltr" | "rtl" {
 export function isArtworkLang(v: unknown): v is ArtworkLanguage {
   return v === "en" || v === "ar" || v === "fa";
 }
+
+/**
+ * The three interface languages, in cycle order, with their native labels.
+ * Used by the Settings language picker (Segmented) and the header toggle
+ * (which shows the NEXT language's native name).
+ */
+export const LANGUAGES: readonly { id: Language; label: string }[] = [
+  { id: "en", label: "English" },
+  { id: "ar", label: "العربية" },
+  { id: "fa", label: "فارسی" },
+];
+
+/** Next language in the EN → AR → FA → EN cycle. */
+export function nextLanguage(lang: Language): Language {
+  const order: readonly Language[] = ["en", "ar", "fa"];
+  const i = order.indexOf(lang);
+  return order[(i + 1) % order.length];
+}
+
+/** The native name of a language (English / العربية / فارسی). */
+export function languageNativeLabel(lang: Language): string {
+  return LANGUAGES.find((l) => l.id === lang)?.label ?? "English";
+}

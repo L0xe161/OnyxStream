@@ -217,3 +217,28 @@ Work Log:
 Stage Summary:
 - Modified: `src/lib/tmdb.ts` (+`fetchItem`), `src/lib/store.ts` (+`refreshLocalizedLists` action; `setLang`/`toggleLang`/`importData` now call it), `src/app/page.tsx` (+mount-only refresh effect).
 - Switching the interface language now refreshes stored favourites and continue-watching snapshots to the new language on top of the already-localized catalog rows and details modal — so titles, overviews, and artwork follow the switch everywhere. A mount-only refresh also catches up snapshots from a previous language / app version.
+
+---
+Task ID: 11
+Agent: Z.ai Code (main orchestrator)
+Task: Add Persian (Farsi) as a third interface language, working exactly like Arabic and English
+
+Work Log:
+- Audit: most of the data layer was already wired for `fa` from a partial earlier attempt — `Language`/`ArtworkLanguage` types already included `"fa"`; `i18n.ts` had a complete Persian translation table; `dirFor` already returned `"rtl"` for `"fa"`; `isArtworkLang` accepted `"fa"`; `buildParams` mapped `fa` → `language=fa-IR` + `include_image_language=fa,en,null`; `searchMultiInLang`/`searchMultiWithPeople` handled `fa-IR`; the prepaint script set `dir=rtl`/`lang=fa`; `sanitizePersisted` accepted `fa`; and `TMDBMediaItem` had `title_fa`/`name_fa`/`overview_fa` bilingual fields. Fonts were also fine: Amiri + IBM Plex Sans Arabic are loaded with `subsets:["arabic"]` (Google's "arabic" subset covers the Persian block — پ چ ژ گ), and the `[dir="rtl"]` font swap applies to Persian too.
+- The MISSING piece was the user-facing toggle logic — `toggleLang` already cycled EN→AR→FA→EN (inline), but the Settings language picker only listed EN/AR and called `toggleLang()` (wrong for a 3-way selector), and the header language button showed a static `t.langToggle` string that didn't reflect the 3-way cycle.
+- `src/lib/i18n.ts` — added three small exports: `LANGUAGES` (`[{id:"en",label:"English"},{id:"ar",label:"العربية"},{id:"fa",label:"فارسی"}]`), `nextLanguage(lang)` (EN→AR→FA→EN cycle), and `languageNativeLabel(lang)` (the native name). Single source of truth for the cycle + labels.
+- `src/lib/store.ts` — refactored `toggleLang` to use `nextLanguage(get().lang)` (was inline; now shares the i18n helper). `setLang`/`toggleLang`/`importData` already call `refreshLocalizedLists`, which fetches `fa-IR` data for stored favourites/continue-watching via `fetchItem` → `buildParams` → `fa-IR`. So switching to Persian refreshes stored snapshots too.
+- `src/components/onyx/settings-sheet.tsx` — the Language section's Segmented now lists all three options (`LANGUAGES.map(l => ({value:l.id,label:l.label}))`) and calls `store().setLang(v)` directly (was `toggleLang()`, which only worked for a 2-option toggle). So a user can pick any of English / العربية / فارسی directly.
+- `src/components/onyx/header.tsx` — the header language button's visible label is now `languageNativeLabel(nextLanguage(lang))` (was the static `t.langToggle`), so it always shows the NEXT language's native name: EN shows "العربية", AR shows "فارسی", FA shows "English". `aria-label` stays `t.langToggleLabel` ("Switch interface language" / "تبديل لغة الواجهة" / "تغییر زبان رابط"). The button is `max-sm:hidden` on mobile, where users switch via the Settings picker.
+- `src/app/page.tsx` — `ViewProps.lang` was hardcoded to `"en" | "ar"` (causing a tsc error once `Language` = `"en"|"ar"|"fa"` flowed through). Changed to `Language` and added the `Language` type import.
+- Verification (agent-browser 1440×900):
+  * Cycle: EN (ltr, button "العربية") → click → AR (rtl, button "فارسی") → click → FA (rtl, button "English") → click → EN (ltr). Full EN→AR→FA→EN round-trip works.
+  * Persian UI: `lang=fa`, `dir=rtl`. Nav tabs "خانه / فیلم‌ها / سریال‌ها / انیمه / کاتالوگ / بیشتر". Headings "پرطرفدارترین امروز" (Trending Today), etc. Settings opens to "زبان" with the Segmented showing English / العربية / فارسی, فارسی selected.
+  * Persian TMDB data: home rows load with `language=fa-IR&include_image_language=fa,en,null` — "لوپن" (Lupin), "کلی‌فیس" (Clayface), "سایبرپانک: اج رانرز" (Cyberpunk: Edgerunners). Titles without a Persian translation show the original (e.g. "The Cycle") — same behaviour as Arabic; the details modal's `fetchDetails` translations-fallback still fills English when Persian is missing.
+  * Movie details modal in Persian: title "لوپن", overview "با الهام از ماجراهای آرسن لوپین، دزد لوطی آسان دیوپ…", cast heading "بازیگران".
+  * Restored the TMDB_API_KEY in `.env` (it had been wiped again, causing 503s); Next.js auto-reloaded and all fa-IR calls returned 200.
+  * `bun run lint` exit 0, `bunx tsc --noEmit` 0 errors. Dev log clean.
+
+Stage Summary:
+- Modified: `src/lib/i18n.ts` (+`LANGUAGES`/`nextLanguage`/`languageNativeLabel`), `src/lib/store.ts` (`toggleLang` uses `nextLanguage`), `src/components/onyx/settings-sheet.tsx` (3-option language picker + `setLang`), `src/components/onyx/header.tsx` (dynamic next-language label), `src/app/page.tsx` (`ViewProps.lang` → `Language`).
+- Persian now works exactly like Arabic and English: full Persian UI strings, RTL layout, fa-IR TMDB metadata + artwork, Persian movie details (title/overview/cast), and a 3-way language cycle (EN→AR→FA→EN) in both the header toggle and the Settings picker. Stored favourites / continue-watching also refresh to Persian on switch (via the existing `refreshLocalizedLists`).
