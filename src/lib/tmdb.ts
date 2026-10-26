@@ -214,7 +214,8 @@ export async function fetchDetails(
   const data = await tmdbFetch<TMDBMediaItem>(`${type}/${id}`, params);
   if (!data) return null;
   const item = { ...data, media_type: type };
-  applyTranslationFallback(item);
+  const requestedLang = options.uiLang ?? options.artworkLang ?? "en";
+  applyTranslationFallback(item, requestedLang);
   return item;
 }
 
@@ -226,48 +227,66 @@ const isEmpty = (s: string | undefined | null): s is "" =>
   !s || !s.trim();
 
 /**
- * Fills in missing localized fields from the English translation bundled in
- * `append_to_response=translations`. TMDB returns the original-language title
- * (and an empty overview) when the requested language has no translation, so:
+ * Fills localized fields from the translations bundled in
+ * `append_to_response=translations`. The translations array is the source of
+ * truth — TMDB's main field (language=fa-IR) sometimes returns the English
+ * fallback for sparse translations while the translations array holds the
+ * actual localized value.
  *
- *  - overview: if the localized overview is empty, use the English one.
- *  - title/name: if the localized title equals the original (i.e. no
- *    translation exists) and the English title is a real translation
- *    (differs from the original), use the English title.
- *  - tagline: if empty, use the English tagline.
+ *  - overview: prefer the requested language's overview; fall back to English
+ *    (an empty synopsis is worse than an English one — the English overview
+ *    fallback is intentional).
+ *  - tagline: prefer the requested language's tagline; in NON-English modes,
+ *    HIDE the tagline when no localized version exists (no English fallback —
+ *    an English marketing slogan reads as a bug in an RTL UI). In English
+ *    mode, fall back to the English tagline as normal.
+ *  - title/name: prefer the requested translation's title; fall back to
+ *    English when the main field is empty/untranslated (equals the original).
  *
- * No-ops when there is no `translations` table (older responses) or no English
- * entry; in those cases the original fields are left untouched.
+ * No-ops when there is no translations table.
  */
-function applyTranslationFallback(item: TMDBMediaItem): void {
+function applyTranslationFallback(item: TMDBMediaItem, requestedLang: Language): void {
   const list = item.translations?.translations;
   if (!list || list.length === 0) return;
+  const requested = findTranslation(list, requestedLang);
   const en = findTranslation(list, "en");
-  if (!en) return;
 
-  if (isEmpty(item.overview)) {
-    const enOverview = en.data.overview;
-    if (enOverview && enOverview.trim()) item.overview = enOverview;
+  // Overview: requested translation → English fallback → keep main field.
+  const requestedOverview = requested?.data.overview?.trim();
+  if (requestedOverview) {
+    item.overview = requested!.data.overview!;
+  } else if (isEmpty(item.overview) && en?.data.overview?.trim()) {
+    item.overview = en.data.overview!;
   }
-  if (isEmpty(item.tagline)) {
-    const enTagline = en.data.tagline;
-    if (enTagline && enTagline.trim()) item.tagline = enTagline;
+
+  // Tagline: show the localized tagline if it exists. In non-English modes,
+  // HIDE the tagline when there's no localized version (an English marketing
+  // slogan reads as a bug in an RTL UI). In English mode, fall back to the
+  // English tagline so it still shows.
+  const requestedTagline = requested?.data.tagline?.trim();
+  if (requestedTagline) {
+    item.tagline = requested!.data.tagline!;
+  } else if (requestedLang === "en" && en?.data.tagline?.trim()) {
+    item.tagline = en.data.tagline!;
+  } else if (requestedLang !== "en") {
+    // No localized tagline in a non-English mode → clear it so the modal
+    // hides the tagline element entirely (no English fallback).
+    item.tagline = "";
   }
-  // Movie title: fall back to English when the localized title is missing or
-  // identical to the original (TMDB returns the original when no localized
-  // title exists).
-  if (isEmpty(item.title) || item.title === item.original_title) {
-    const enTitle = en.data.title;
-    if (enTitle && enTitle.trim() && enTitle !== item.original_title) {
-      item.title = enTitle;
-    }
+
+  // Movie title: prefer the requested translation's title; fall back to
+  // English when the main field is empty or untranslated (equals the original).
+  if (requested?.data.title?.trim()) {
+    item.title = requested.data.title;
+  } else if ((isEmpty(item.title) || item.title === item.original_title) && en?.data.title?.trim() && en.data.title !== item.original_title) {
+    item.title = en.data.title;
   }
-  // TV name: same logic.
-  if (isEmpty(item.name) || item.name === item.original_name) {
-    const enName = en.data.name;
-    if (enName && enName.trim() && enName !== item.original_name) {
-      item.name = enName;
-    }
+
+  // TV name: same.
+  if (requested?.data.name?.trim()) {
+    item.name = requested.data.name;
+  } else if ((isEmpty(item.name) || item.name === item.original_name) && en?.data.name?.trim() && en.data.name !== item.original_name) {
+    item.name = en.data.name;
   }
 }
 
@@ -324,15 +343,60 @@ export async function fetchMediaImages(
   return await tmdbFetch<TMDBImagesResponse>(`${type}/${id}/images`, params);
 }
 
+/** Persian (fa) genre names keyed by TMDB genre id. TMDB returns `name: null`
+ *  for `genre/.../list?language=fa-IR` (it has no Persian genre catalogue, only
+ *  Arabic), so we supply the canonical Persian labels locally. Covers both the
+ *  movie and TV genre id spaces. */
+const GENRE_NAMES_FA: Record<number, string> = {
+  28: "اکشن",
+  12: "ماجراجویی",
+  16: "انیمیشن",
+  35: "کمدی",
+  80: "جنایی",
+  99: "مستند",
+  18: "درام",
+  10751: "خانوادگی",
+  14: "فانتزی",
+  36: "تاریخی",
+  27: "ترسناک",
+  10402: "موسیقی",
+  9648: "معمایی",
+  10749: "عاشقانه",
+  878: "علمی-تخیلی",
+  10770: "تلویزیونی",
+  53: "هیجان‌انگیز",
+  10752: "جنگی",
+  37: "وسترن",
+  10759: "اکشن و ماجراجویی",
+  10762: "کودکان",
+  10763: "اخبار",
+  10764: "واقع‌شناختی",
+  10765: "علمی-تخیلی و فانتزی",
+  10766: "اپرا",
+  10767: "تاک‌شو",
+  10768: "جنگ و سیاست",
+};
+
+/** Returns a genre with a localized name when TMDB returned null/empty. TMDB
+ *  has no Persian genre catalogue (`language=fa-IR` → `name: null`), so the
+ *  genre chips would otherwise render as empty circles; fall back to the local
+ *  Persian map. Arabic and English get real names from TMDB directly. */
+function localizeGenre(g: TMDBGenre, lang: Language): TMDBGenre {
+  if (g.name && g.name.trim()) return g;
+  if (lang === "fa" && GENRE_NAMES_FA[g.id]) return { ...g, name: GENRE_NAMES_FA[g.id] };
+  return g;
+}
+
 export async function fetchGenres(options: TMDBRequestOptions = {}): Promise<{ movie: TMDBGenre[]; tv: TMDBGenre[] }> {
   const params = buildParams(options);
   const [movieRes, tvRes] = await Promise.all([
     tmdbFetch<{ genres: TMDBGenre[] }>("genre/movie/list", params),
     tmdbFetch<{ genres: TMDBGenre[] }>("genre/tv/list", params),
   ]);
+  const lang = options.uiLang ?? options.artworkLang ?? "en";
   return {
-    movie: movieRes?.genres ?? [],
-    tv: tvRes?.genres ?? [],
+    movie: (movieRes?.genres ?? []).map((g) => localizeGenre(g, lang)),
+    tv: (tvRes?.genres ?? []).map((g) => localizeGenre(g, lang)),
   };
 }
 

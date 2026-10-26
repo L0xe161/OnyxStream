@@ -242,3 +242,30 @@ Work Log:
 Stage Summary:
 - Modified: `src/lib/i18n.ts` (+`LANGUAGES`/`nextLanguage`/`languageNativeLabel`), `src/lib/store.ts` (`toggleLang` uses `nextLanguage`), `src/components/onyx/settings-sheet.tsx` (3-option language picker + `setLang`), `src/components/onyx/header.tsx` (dynamic next-language label), `src/app/page.tsx` (`ViewProps.lang` → `Language`).
 - Persian now works exactly like Arabic and English: full Persian UI strings, RTL layout, fa-IR TMDB metadata + artwork, Persian movie details (title/overview/cast), and a 3-way language cycle (EN→AR→FA→EN) in both the header toggle and the Settings picker. Stored favourites / continue-watching also refresh to Persian on switch (via the existing `refreshLocalizedLists`).
+
+---
+Task ID: 12
+Agent: Z.ai Code (main orchestrator)
+Task: Fix Persian (fa) issues — empty genre chips + English tagline showing in a Persian UI
+
+Work Log:
+- Diagnosed via direct TMDB API queries:
+  * Genres: `GET /api/tmdb/genre/movie/list?language=fa-IR` returns `name: null` for EVERY genre (TMDB has no Persian genre catalogue — only Arabic). So the genre chips rendered as empty circles. Arabic (`ar-SA`) returns real Arabic names ("حركة", "مغامرة"…) and English returns English, so the bug was Persian-only.
+  * Tagline: "Project Hail Mary" (id 687163) in fa-IR — `mainTitle: "پروژه هیل مری"` (Persian ✓) but `mainTagline: ""` and `faTagline: ""` (NO Persian tagline exists, not even in the translations array). The previous `applyTranslationFallback` filled the empty tagline from the English translation ("Believe in the Hail Mary."), which reads as a bug in an RTL Persian UI. Inception (id 27205) by contrast HAS a Persian tagline ("ذهن شما صحنه جرم است.") and showed correctly.
+- `src/lib/tmdb.ts` — added a local `GENRE_NAMES_FA` map (canonical Persian labels for all standard TMDB movie + TV genre ids — 28=اکشن, 12=ماجراجویی, 16=انیمیشن, 35=کمدی, 80=جنایی, 99=مستند, 18=درام, 10751=خانوادگی, 14=فانتزی, 36=تاریخی, 27=ترسناک, 10402=موسیقی, 9648=معمایی, 10749=عاشقانه, 878=علمی-تخیلی, 10770=تلویزیونی, 53=هیجان‌انگیز, 10752=جنگی, 37=وسترن, 10759=اکشن و ماجراجویی, 10762=کودکان, 10763=اخبار, 10764=واقع‌شناختی, 10765=علمی-تخیلی و فانتزی, 10766=اپرا, 10767=تاک‌شو, 10768=جنگ و سیاست). Added a `localizeGenre(g, lang)` helper that returns the genre as-is when TMDB returned a real name, else looks up the Persian map. `fetchGenres` now `.map`s both movie + tv genre lists through `localizeGenre` so Persian chips are never empty. Arabic/English pass through unchanged (TMDB returns real names for them).
+- `src/lib/tmdb.ts` — rewrote `applyTranslationFallback(item, requestedLang)` (was no lang arg). It now treats the `translations` array as the source of truth (finds the requested-language entry + the English entry) rather than only filling EMPTY main fields from English:
+  * Overview: prefer the requested language's overview from the translations array; fall back to English when the localized overview is empty (the English overview fallback is intentional — an empty synopsis is worse).
+  * Tagline: prefer the requested language's tagline. In NON-English modes, HIDE the tagline entirely when no localized version exists (clear it to "" → the modal's `{item.tagline && …}` guard doesn't render the element). In English mode, fall back to the English tagline as normal. This stops an English marketing slogan ("Believe in the Hail Mary.") from leaking into a Persian/Arabic UI.
+  * Title/name: prefer the requested translation's title from the translations array (TMDB's fa-IR main field sometimes returns the original while the translations array holds the localized title); fall back to English when the main field is empty/untranslated.
+- `fetchDetails` now derives `requestedLang = options.uiLang ?? options.artworkLang ?? "en"` and passes it to `applyTranslationFallback`.
+- Verification (agent-browser 1440×900):
+  * Persian genre chips (home Browse-by-Genre): "همه ژانرها، اکشن، کمدی، درام، عاشقانه، ترسناک، هیجان‌انگیز، ماجراجویی، انیمیشن، جنایی، معمایی، علمی-تخیلی…" — 28 chips, ZERO empty. Was all empty circles before.
+  * Project Hail Mary (movie-687163) in fa: title "پروژه هیل مری", `hasTaglineElement: false` (tagline element NOT rendered — no English fallback), Persian overview shows. Was showing "Believe in the Hail Mary." in English before.
+  * Inception (movie-27205) in fa: tagline "ذهن شما صنه جرم است." (Persian — shows because a Persian tagline EXISTS). Confirms the hide-only-when-missing logic doesn't suppress real translations.
+  * Project Hail Mary in en: tagline "Believe in the Hail Mary." shows (English mode keeps the English tagline).
+  * Arabic unchanged: Inception tagline "عقلك هو مسرح الجريمة" (shows), genres "حركة/مغامرة/رسوم متحركة/كوميديا" (from TMDB).
+  * `bun run lint` exit 0, `bunx tsc --noEmit` 0 errors. Dev log clean.
+
+Stage Summary:
+- Modified: `src/lib/tmdb.ts` only (+`GENRE_NAMES_FA` + `localizeGenre` in `fetchGenres`; rewrote `applyTranslationFallback(item, requestedLang)` with translations-array-as-source-of-truth + tagline-hide-in-non-English-modes; `fetchDetails` passes the requested lang).
+- Persian genre chips now show real Persian names (local map, since TMDB has no fa genre catalogue), and movie taglines no longer leak English into the Persian UI — a tagline shows only when a Persian (or Arabic) translation exists, and is hidden otherwise (English mode keeps the English tagline). Arabic and English behaviour unchanged.
