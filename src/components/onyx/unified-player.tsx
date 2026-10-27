@@ -33,8 +33,8 @@ export function UnifiedPlayer({ lang }: { lang: Language }) {
 }
 
 function Theater({ media, lang }: { media: TMDBMediaItem; lang: Language }) {
-  // Movies released less than 90 days ago (or not yet released) show a simple
-  // notice instead of the embedded player frame.
+  // Movies released less than 30 days ago (or not yet released) show a simple
+  // notice instead of the embedded player frame. TV series always play.
   if (isComingSoonMovie(media)) return <ComingSoonStage media={media} lang={lang} />;
   return <StreamTheater media={media} lang={lang} />;
 }
@@ -130,11 +130,6 @@ function StreamTheater({ media, lang }: { media: TMDBMediaItem; lang: Language }
             src={p.streamUrl}
             title={`${title} — ${t.nowPlaying}`}
             onLoad={p.onFrameLoad}
-            // Strict sandbox: the embed provider may run its own player scripts
-            // and access its own cookies/storage, but cannot navigate the top
-            // window, open popups, run modals or reach our origin. Resizing
-            // and fullscreen are handled exclusively by the embed's built-in
-            // control bar, so we do not add our own.
             allow="autoplay *; fullscreen *; picture-in-picture *; encrypted-media *"
             allowFullScreen
             referrerPolicy="origin"
